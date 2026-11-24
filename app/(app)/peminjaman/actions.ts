@@ -147,3 +147,36 @@ export async function batalkanPeminjaman(id: number, alasan: string): Promise<Ac
     return { ok: true, message: "Peminjaman dibatalkan. Unit kembali tersedia." };
   });
 }
+
+const perpanjangSchema = z.object({
+  peminjamanId: idSchema,
+  tgl_rencana_kembali: z.string().min(1, "Tanggal rencana kembali baru wajib diisi."),
+  alasan: z.string().trim().min(1, "Alasan perpanjangan wajib diisi.").max(300),
+});
+
+export async function perpanjangPeminjaman(input: z.input<typeof perpanjangSchema>): Promise<ActionResult> {
+  const result = await runAction<{ id: number }>(async () => {
+    await authorize("peminjaman.extend");
+    const parsed = perpanjangSchema.safeParse(input);
+    if (!parsed.success) return validationError(parsed.error);
+
+    let tgl: string;
+    try {
+      tgl = witaInputToIso(parsed.data.tgl_rencana_kembali);
+    } catch {
+      return { ok: false, error: "Format tanggal tidak valid." };
+    }
+
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc("perpanjang_peminjaman", {
+      p_peminjaman_id: parsed.data.peminjamanId,
+      p_tgl_rencana_kembali: tgl,
+      p_alasan: parsed.data.alasan,
+    });
+    if (error || !data?.[0]) return { ok: false, error: error ? dbErrorMessage(error) : "Gagal memperpanjang." };
+    return { ok: true, data: { id: data[0].id } };
+  });
+
+  if (result.ok && result.data) redirect(`/peminjaman/${result.data.id}?perpanjangan=1`);
+  return result.ok ? { ok: true } : result;
+}

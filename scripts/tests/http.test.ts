@@ -154,6 +154,17 @@ async function main() {
         await bersihkan([pid], ["PRJ-002", "PRJ-003"]);
       }
     });
+    await check("Dashboard: kartu ringkasan & tabel sesuai role, ikon notifikasi", async () => {
+      const ha = await (await get("/", ca)).text();
+      const hs = await (await get("/", cs)).text();
+      const okA = ha.includes("Aset Tersedia") && ha.includes("Peminjaman Berjalan") && !ha.includes("Menunggu Pemasangan") && ha.includes("Notifikasi,");
+      const okS = hs.includes("Menunggu Pemasangan") && hs.includes("Sedang Dipinjam") && hs.includes("Terlambat");
+      return (okA && okS) || `admin ${okA}, sarpras ${okS}`;
+    });
+    await check("Halaman Perpanjang: Sarpras → 403", async () => {
+      const html = await (await get("/peminjaman/1/perpanjang", cs)).text();
+      return html.includes("Akses ditolak") || "tidak 403";
+    });
     await check("Detail aset menampilkan riwayat peminjaman", async () => {
       const { data: u } = await admin.from("aset").select("id").eq("kode_aset", "LPT-001").single();
       const r = await get(`/aset/${u!.id}`, cs);

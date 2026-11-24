@@ -26,7 +26,7 @@ export const metadata: Metadata = { title: "Detail Peminjaman" };
 export default async function DetailPeminjamanPage({ params, searchParams }: PageProps<"/peminjaman/[id]">) {
   const user = await requirePermission("peminjaman.view");
   const { id } = await params;
-  const { baru } = await searchParams;
+  const { baru, perpanjangan } = await searchParams;
   const pid = Number(id);
   if (!Number.isInteger(pid) || pid <= 0) notFound();
 
@@ -67,6 +67,11 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
       {baru === "1" && (
         <Alert color="success" className="mb-4">
           Peminjaman {p.kode} tersimpan dengan status Diajukan. Petugas Sarpras sudah diberi notifikasi.
+        </Alert>
+      )}
+      {perpanjangan === "1" && p.sebelumnya && (
+        <Alert color="success" className="mb-4">
+          Perpanjangan berhasil. {p.kode} langsung berstatus Dipinjam; {p.sebelumnya.kode_peminjaman} ditutup menjadi Selesai.
         </Alert>
       )}
       {p.status === "terlambat" && (

@@ -137,14 +137,14 @@ isOneToOne: false
                   ]
                 },"notifikasi": {
                   Row: {
-                    "created_at": string,"id": number,"peminjaman_id": number | null,"pesan": string,"sudah_dibaca": boolean,"user_id": string
+                    "created_at": string,"id": number,"jenis": string,"peminjaman_id": number | null,"pesan": string,"sudah_dibaca": boolean,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: never,"peminjaman_id"?: number | null,"pesan": string,"sudah_dibaca"?: boolean,"user_id": string
+                    "created_at"?: string,"id"?: never,"jenis"?: string,"peminjaman_id"?: number | null,"pesan": string,"sudah_dibaca"?: boolean,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: never,"peminjaman_id"?: number | null,"pesan"?: string,"sudah_dibaca"?: boolean,"user_id"?: string
+                    "created_at"?: string,"id"?: never,"jenis"?: string,"peminjaman_id"?: number | null,"pesan"?: string,"sudah_dibaca"?: boolean,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -370,6 +370,9 @@ isOneToOne: false
               "id": number,"kategori_id": number,"kategori_nama": string,"kode_aset": string,"nama_aset": string
             }[]
                            },
+"baca_semua_notifikasi":
+{ Args: Record<PropertyKey, never>; Returns: undefined
+                           },
 "batalkan_peminjaman":
 { Args: { "p_alasan"?: string,"p_peminjaman_id": number }; Returns: undefined
                            },
@@ -389,6 +392,8 @@ isOneToOne: false
                            },
 "kirim_notifikasi":
 { Args: { "p_peminjaman_id": number,"p_permission": string,"p_pesan": string }; Returns: undefined
+                           } |
+{ Args: { "p_jenis": string,"p_peminjaman_id": number,"p_permission": string,"p_pesan": string }; Returns: undefined
                            },
 "my_permissions":
 { Args: Record<PropertyKey, never>; Returns: string[]
@@ -401,14 +406,27 @@ isOneToOne: false
 "next_kode_peminjaman":
 { Args: Record<PropertyKey, never>; Returns: string
                            },
+"perpanjang_peminjaman":
+{ Args: { "p_alasan": string,"p_peminjaman_id": number,"p_tgl_rencana_kembali": string }; Returns: {
+              "id": number,"kode_peminjaman": string
+            }[]
+                           },
 "reservasi_id_kejadian":
 { Args: { "p_jenis": string,"p_peminjaman_id": number }; Returns: number
+                           },
+"ringkasan_dashboard":
+{ Args: Record<PropertyKey, never>; Returns: {
+              "aset_tersedia": number,"diajukan": number,"dipinjam": number,"terlambat": number
+            }[]
                            },
 "simpan_pemasangan":
 { Args: { "p_foto": (string)[],"p_pemasangan_id": number,"p_peminjaman_id": number,"p_units": Json }; Returns: undefined
                            },
 "simpan_pengembalian":
 { Args: { "p_foto": (string)[],"p_peminjaman_id": number,"p_pengembalian_id": number,"p_units": Json }; Returns: undefined
+                           },
+"tandai_terlambat":
+{ Args: Record<PropertyKey, never>; Returns: number
                            },
 "validasi_foto":
 { Args: { "p_paths": (string)[],"p_prefix": string }; Returns: (string)[]
