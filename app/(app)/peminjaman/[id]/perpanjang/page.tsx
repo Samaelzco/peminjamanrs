@@ -25,7 +25,7 @@ export default async function PerpanjangPage({ params }: PageProps<"/peminjaman/
   const usul = new Date(Math.max(lama, new Date().getTime()) + 24 * 3600_000);
   usul.setSeconds(0, 0);
 
-  const bisa = p.status === "dipinjam" || p.status === "terlambat";
+  const bisa = (p.status === "dipinjam" || p.status === "terlambat") && p.terpasang;
 
   return (
     <>
@@ -38,7 +38,7 @@ export default async function PerpanjangPage({ params }: PageProps<"/peminjaman/
       />
       {!bisa ? (
         <Alert color="warning">
-          Perpanjangan hanya untuk peminjaman berstatus Dipinjam atau Terlambat. Status sekarang:{" "}
+          Perpanjangan hanya untuk peminjaman yang sudah dipasang dan berstatus Dipinjam atau Terlambat. Status sekarang:{" "}
           {STATUS_PEMINJAMAN[p.status].label}.
         </Alert>
       ) : (

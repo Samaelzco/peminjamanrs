@@ -10,6 +10,7 @@ const RUTE: { pola: RegExp; permission: Permission[] }[] = [
   { pola: /^\/peminjaman\/\d+\/pemasangan\/?$/, permission: ["pemasangan.create"] },
   { pola: /^\/peminjaman\/\d+\/pengembalian\/?$/, permission: ["pengembalian.create"] },
   { pola: /^\/peminjaman\/\d+\/perpanjang\/?$/, permission: ["peminjaman.extend"] },
+  { pola: /^\/peminjaman\/\d+\/ubah\/?$/, permission: ["peminjaman.update"] },
   { pola: /^\/peminjaman\/\d+\/?$/, permission: ["peminjaman.view", "riwayat.view"] },
   { pola: /^\/riwayat(\/|$)/, permission: ["riwayat.view"] },
   { pola: /^\/aset(\/|$)/, permission: ["aset.view"] },

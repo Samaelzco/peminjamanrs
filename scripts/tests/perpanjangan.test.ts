@@ -6,10 +6,12 @@ const ASET_UJI = ["TI-LPT-003", "TI-CAM-002"];
 
 async function pinjamDanPasang(a: Db, s: Db, ids: number[], mulaiJam: number, kembaliJam: number) {
   const now = Date.now();
+  // Dibuat & dipasang dengan rencana kembali di masa depan (peminjaman yang rencananya sudah
+  // lewat saat dicatat langsung berstatus terlambat), lalu jadwalnya digeser untuk uji cron.
   const { data, error } = await a.rpc("buat_peminjaman", {
     ...DATA_PEMINJAM,
     p_tgl_peminjaman: new Date(now + mulaiJam * 3600_000).toISOString(),
-    p_tgl_rencana_kembali: new Date(now + kembaliJam * 3600_000).toISOString(),
+    p_tgl_rencana_kembali: new Date(now + Math.max(kembaliJam, 1) * 3600_000).toISOString(),
     p_aset_ids: ids,
   });
   if (error) throw error;
@@ -22,6 +24,13 @@ async function pinjamDanPasang(a: Db, s: Db, ids: number[], mulaiJam: number, ke
     p_units: det!.map((d) => ({ detail_id: d.id, kondisi_keluar: "baik" })), p_foto: foto,
   });
   if (e2) throw e2;
+  if (kembaliJam < 1) {
+    const { error: e3 } = await admin
+      .from("peminjaman")
+      .update({ tgl_rencana_kembali: new Date(now + kembaliJam * 3600_000).toISOString() })
+      .eq("id", pid);
+    if (e3) throw e3;
+  }
   return pid;
 }
 

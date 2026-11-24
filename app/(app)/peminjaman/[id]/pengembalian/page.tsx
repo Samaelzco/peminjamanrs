@@ -19,7 +19,7 @@ export default async function PengembalianPage({ params }: PageProps<"/peminjama
   const p = await getPeminjaman(pid);
   if (!p) notFound();
 
-  const bisa = p.status === "dipinjam" || p.status === "terlambat";
+  const bisa = (p.status === "dipinjam" || p.status === "terlambat") && p.terpasang;
 
   return (
     <>
@@ -32,7 +32,7 @@ export default async function PengembalianPage({ params }: PageProps<"/peminjama
       />
       {!bisa ? (
         <Alert color="warning">
-          Pengembalian hanya untuk peminjaman berstatus Dipinjam atau Terlambat. Status sekarang:{" "}
+          Pengembalian hanya untuk peminjaman yang sudah dipasang dan berstatus Dipinjam atau Terlambat. Status sekarang:{" "}
           {STATUS_PEMINJAMAN[p.status].label}.
         </Alert>
       ) : (

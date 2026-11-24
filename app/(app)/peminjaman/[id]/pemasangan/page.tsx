@@ -28,9 +28,9 @@ export default async function PemasanganPage({ params }: PageProps<"/peminjaman/
         title={`Pemasangan ${p.kode}`}
         description={`${p.namaPeminjam} · ${p.divisi} · ${p.ruangan} · keluar ${formatWita(p.tglPeminjaman)}`}
       />
-      {p.status !== "diajukan" ? (
+      {!((p.status === "diajukan" || p.status === "terlambat") && !p.terpasang) ? (
         <Alert color="warning">
-          Pemasangan hanya untuk peminjaman berstatus Diajukan. Status sekarang: {STATUS_PEMINJAMAN[p.status].label}.
+          Pemasangan hanya untuk peminjaman yang unitnya belum dipasang. Status sekarang: {STATUS_PEMINJAMAN[p.status].label}.
         </Alert>
       ) : (
         <PemasanganForm peminjamanId={p.id} units={p.units} />

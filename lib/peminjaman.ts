@@ -22,32 +22,34 @@ const JUDUL_STATUS: Record<StatusPeminjaman, string> = {
   selesai: "Peminjaman selesai",
 };
 
+function judulLog(lama: StatusPeminjaman | null, baru: StatusPeminjaman) {
+  if (lama === null && baru === "dipinjam") return "Perpanjangan dibuat & langsung dipinjam";
+  if (lama === null && baru === "terlambat") return "Peminjaman dicatat (sudah terlambat)";
+  if (lama === baru) return "Data peminjaman diperbaiki";
+  return JUDUL_STATUS[baru];
+}
+
 /** Ambil detail lengkap satu peminjaman (RLS tetap berlaku). */
 export async function getPeminjaman(id: number) {
   const supabase = await createClient();
 
-  const { data: p, error } = await supabase
-    .from("peminjaman")
-    .select(
-      `id, kode_peminjaman, status, nama_peminjam, divisi_peminjam, kontak_peminjam, ruangan, keperluan,
-       tgl_peminjaman, tgl_rencana_kembali, created_at, dicatat_oleh, perpanjangan_dari,
-       detail_peminjaman ( id, kondisi_keluar, kondisi_masuk, catatan,
-         aset ( id, kode_aset, nama_aset, status, kategori_id, kategori ( nama ) ),
-         penggantian_unit ( id, alasan, staff_id, created_at,
-           lama:aset!penggantian_unit_aset_lama_id_fkey ( kode_aset ),
-           baru:aset!penggantian_unit_aset_baru_id_fkey ( kode_aset ) ) ),
-       pemasangan ( id, staff_id, tgl_pemasangan, foto_pemasangan ( id, path_foto ) ),
-       pengembalian ( id, staff_id, tgl_kembali, foto_pengembalian ( id, path_foto ) )`,
-    )
-    .eq("id", id)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!p) return null;
-
-  const [{ data: sebelumnya }, { data: sesudahnya }, { data: log }] = await Promise.all([
-    p.perpanjangan_dari
-      ? supabase.from("peminjaman").select("id, kode_peminjaman, status").eq("id", p.perpanjangan_dari).maybeSingle()
-      : Promise.resolve({ data: null }),
+  // Semua query yang tidak saling bergantung dijalankan bersamaan.
+  const [{ data: p, error }, { data: sesudahnya }, { data: log }] = await Promise.all([
+    supabase
+      .from("peminjaman")
+      .select(
+        `id, kode_peminjaman, status, nama_peminjam, divisi_peminjam, kontak_peminjam, ruangan, keperluan,
+         tgl_peminjaman, tgl_rencana_kembali, created_at, dicatat_oleh, perpanjangan_dari,
+         detail_peminjaman ( id, kondisi_keluar, kondisi_masuk, catatan,
+           aset ( id, kode_aset, nama_aset, status, kategori_id, kategori ( nama ) ),
+           penggantian_unit ( id, alasan, staff_id, created_at,
+             lama:aset!penggantian_unit_aset_lama_id_fkey ( kode_aset ),
+             baru:aset!penggantian_unit_aset_baru_id_fkey ( kode_aset ) ) ),
+         pemasangan ( id, staff_id, tgl_pemasangan, foto_pemasangan ( id, path_foto ) ),
+         pengembalian ( id, staff_id, tgl_kembali, foto_pengembalian ( id, path_foto ) )`,
+      )
+      .eq("id", id)
+      .maybeSingle(),
     supabase.from("peminjaman").select("id, kode_peminjaman, status").eq("perpanjangan_dari", id).maybeSingle(),
     supabase
       .from("log_peminjaman")
@@ -56,7 +58,8 @@ export async function getPeminjaman(id: number) {
       .order("created_at")
       .order("id"),
   ]);
-
+  if (error) throw new Error(error.message);
+  if (!p) return null;
   const penggantian = p.detail_peminjaman.flatMap((d) => d.penggantian_unit);
   const pemasangan = p.pemasangan;
   const pengembalian = p.pengembalian;
@@ -72,19 +75,23 @@ export async function getPeminjaman(id: number) {
       ].filter((x): x is string => !!x),
     ),
   ];
-  const { data: staff } = await supabase.rpc("nama_staff", { p_ids: staffIds });
-  const namaStaff = new Map((staff ?? []).map((s) => [s.id, s.nama]));
-  const nama = (sid: string | null | undefined) => (sid ? namaStaff.get(sid) ?? null : null);
-
-  // Signed URL untuk foto (bucket privat).
+  // Putaran kedua (bersamaan): nama staf, signed URL foto (bucket privat), peminjaman sebelumnya.
   const pathPasang = (pemasangan?.foto_pemasangan ?? []).map((f) => f.path_foto);
   const pathKembali = (pengembalian?.foto_pengembalian ?? []).map((f) => f.path_foto);
   const semuaPath = [...pathPasang, ...pathKembali];
+  const [{ data: staff }, { data: urls }, { data: sebelumnya }] = await Promise.all([
+    supabase.rpc("nama_staff", { p_ids: staffIds }),
+    semuaPath.length
+      ? supabase.storage.from(BUCKET).createSignedUrls(semuaPath, SIGNED_URL_DETIK)
+      : Promise.resolve({ data: [] as { path: string | null; signedUrl: string }[] }),
+    p.perpanjangan_dari
+      ? supabase.from("peminjaman").select("id, kode_peminjaman, status").eq("id", p.perpanjangan_dari).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+  const namaStaff = new Map((staff ?? []).map((s) => [s.id, s.nama]));
+  const nama = (sid: string | null | undefined) => (sid ? namaStaff.get(sid) ?? null : null);
   const signed = new Map<string, string>();
-  if (semuaPath.length) {
-    const { data: urls } = await supabase.storage.from(BUCKET).createSignedUrls(semuaPath, SIGNED_URL_DETIK);
-    for (const u of urls ?? []) if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
-  }
+  for (const u of urls ?? []) if (u.path && u.signedUrl) signed.set(u.path, u.signedUrl);
   const fotoUrl = (paths: string[]) => paths.map((path) => ({ path, url: signed.get(path) ?? null }));
 
   const units = [...p.detail_peminjaman]
@@ -106,10 +113,7 @@ export async function getPeminjaman(id: number) {
     ...(log ?? []).map((l) => ({
       key: `log-${l.id}`,
       waktu: l.created_at,
-      judul:
-        l.status_lama === null && l.status_baru === "dipinjam"
-          ? "Perpanjangan dibuat & langsung dipinjam"
-          : JUDUL_STATUS[l.status_baru],
+      judul: judulLog(l.status_lama, l.status_baru),
       keterangan: l.keterangan,
       staffNama: nama(l.staff_id),
       jenis: l.status_baru as TimelineEvent["jenis"],
@@ -138,6 +142,8 @@ export async function getPeminjaman(id: number) {
     createdAt: p.created_at,
     dicatatOleh: nama(p.dicatat_oleh) ?? "-",
     sebelumnya: sebelumnya ?? null,
+    /** Unit sudah dipasang (ada pemasangan, atau hasil perpanjangan). */
+    terpasang: !!pemasangan || p.perpanjangan_dari !== null,
     sesudahnya: sesudahnya ?? null,
     units,
     pemasangan: pemasangan

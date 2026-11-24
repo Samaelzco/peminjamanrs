@@ -7,6 +7,8 @@ export const BATAS = {
   divisi: 100,
   ruangan: 100,
   keperluan: 500,
+  /** Batas keperluan di database (perpanjangan menambahkan alasan ke keperluan). */
+  keperluanDb: 2000,
   kontakMin: 10,
   kontakMax: 15,
   catatan: 500,

@@ -10,9 +10,9 @@ async function main() {
     const a = await signIn(adm.email, adm.password);
     const s = await signIn(sar.email, sar.password);
 
-    await check("Admin punya 15 permission sesuai seed (termasuk debug.reset)", async () => {
+    await check("Admin punya 16 permission sesuai seed (termasuk debug.reset, peminjaman.update)", async () => {
       const { data } = await a.rpc("my_permissions");
-      return data?.length === 15 || `dapat ${data?.length}`;
+      return data?.length === 16 || `dapat ${data?.length}`;
     });
     await check("Sarpras punya 13 permission sesuai seed", async () => {
       const { data } = await s.rpc("my_permissions");

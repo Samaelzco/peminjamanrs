@@ -18,8 +18,9 @@
     "test:peminjaman": "tsx --env-file=.env.local scripts/tests/peminjaman.test.ts",
     "test:pemasangan": "tsx --env-file=.env.local scripts/tests/pemasangan.test.ts",
     "test:perpanjangan": "tsx --env-file=.env.local scripts/tests/perpanjangan.test.ts",
+    "test:koreksi": "tsx --env-file=.env.local scripts/tests/koreksi.test.ts",
     "test:riwayat": "tsx --env-file=.env.local scripts/tests/riwayat.test.ts",
-    "test:db": "npm run test:rbac && npm run test:master && npm run test:peminjaman && npm run test:pemasangan && npm run test:perpanjangan",
+    "test:db": "npm run test:rbac && npm run test:master && npm run test:peminjaman && npm run test:pemasangan && npm run test:perpanjangan && npm run test:koreksi",
     "test:web": "npm run test:http && npm run test:riwayat",
     "test:e2e": "playwright test"
   },

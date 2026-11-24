@@ -29,14 +29,13 @@ export default async function DashboardPage() {
   }
 
   const supabase = await createClient();
-  const { data: ringkasan } = await supabase.rpc("ringkasan_dashboard").single();
 
   // Tabel tindak lanjut sesuai permission.
   const sections: Section[] = [];
   if (perms.includes("pemasangan.create")) {
     sections.push({
       judul: "Menunggu Pemasangan",
-      deskripsi: "Peminjaman diajukan yang perlu dipasang.",
+      deskripsi: "Peminjaman yang unitnya belum dipasang (termasuk yang sudah terlambat).",
       status: "diajukan",
       kosong: "Tidak ada peminjaman yang menunggu pemasangan.",
     });
@@ -58,16 +57,27 @@ export default async function DashboardPage() {
     );
   }
 
-  const data = await Promise.all(
-    sections.map((s) =>
-      supabase
-        .from("peminjaman")
-        .select(PEMINJAMAN_ROW_SELECT)
-        .eq("status", s.status)
-        .order(s.status === "diajukan" ? "tgl_peminjaman" : "tgl_rencana_kembali")
-        .limit(50),
+  // Ringkasan dan semua tabel diambil bersamaan.
+  const [{ data: ringkasan }, ...data] = await Promise.all([
+    supabase.rpc("ringkasan_dashboard").single(),
+    ...sections.map((s) =>
+      s.status === "diajukan"
+        ? supabase
+            .from("peminjaman")
+            .select(`${PEMINJAMAN_ROW_SELECT}, pemasangan(id)`)
+            .in("status", ["diajukan", "terlambat"])
+            .is("perpanjangan_dari", null)
+            .is("pemasangan", null)
+            .order("tgl_peminjaman")
+            .limit(50)
+        : supabase
+            .from("peminjaman")
+            .select(PEMINJAMAN_ROW_SELECT)
+            .eq("status", s.status)
+            .order("tgl_rencana_kembali")
+            .limit(50),
     ),
-  );
+  ]);
 
   const kartu = [
     { label: "Diajukan", nilai: ringkasan?.diajukan ?? 0, icon: HiOutlineClipboardDocumentList, warna: "bg-yellow-100 text-yellow-700" },

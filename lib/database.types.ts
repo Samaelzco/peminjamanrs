@@ -428,8 +428,14 @@ isOneToOne: false
 "simpan_pengembalian":
 { Args: { "p_foto": (string)[],"p_peminjaman_id": number,"p_pengembalian_id": number,"p_units": Json }; Returns: undefined
                            },
+"sudah_terpasang":
+{ Args: { "p_peminjaman_id": number }; Returns: boolean
+                           },
 "tandai_terlambat":
 { Args: Record<PropertyKey, never>; Returns: number
+                           },
+"ubah_peminjaman":
+{ Args: { "p_divisi_peminjam": string,"p_keperluan": string,"p_keterangan"?: string,"p_kontak_peminjam": string,"p_nama_peminjam": string,"p_peminjaman_id": number,"p_ruangan": string,"p_status": Database["public"]['Enums']["status_peminjaman"],"p_tgl_peminjaman": string,"p_tgl_rencana_kembali": string }; Returns: undefined
                            },
 "validasi_foto":
 { Args: { "p_paths": (string)[],"p_prefix": string }; Returns: (string)[]

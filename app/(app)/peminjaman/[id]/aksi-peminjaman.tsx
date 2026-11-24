@@ -6,6 +6,7 @@ import { Alert, Button, Label, Modal, ModalBody, ModalFooter, ModalHeader, Texta
 import {
   HiOutlineArrowUturnLeft,
   HiOutlineCalendarDays,
+  HiOutlinePencilSquare,
   HiOutlineWrenchScrewdriver,
   HiOutlineXCircle,
 } from "react-icons/hi2";
@@ -18,19 +19,21 @@ type Props = {
   id: number;
   kode: string;
   status: StatusPeminjaman;
-  tglRencanaKembali: string;
-  can: { pemasangan: boolean; pengembalian: boolean; extend: boolean; cancel: boolean };
+  terpasang: boolean;
+  can: { pemasangan: boolean; pengembalian: boolean; extend: boolean; cancel: boolean; update: boolean };
 };
 
-export function AksiPeminjaman({ id, kode, status, can }: Props) {
+export function AksiPeminjaman({ id, kode, status, terpasang, can }: Props) {
   const action = useAction();
   const [batal, setBatal] = useState(false);
-  const berjalan = status === "dipinjam" || status === "terlambat";
+  // Belum dipasang: diajukan, atau terlambat sejak dicatat (rencana kembali sudah lewat).
+  const menungguPasang = (status === "diajukan" || status === "terlambat") && !terpasang;
+  const berjalan = (status === "dipinjam" || status === "terlambat") && terpasang;
 
   return (
     <div className="flex flex-col items-stretch gap-2 lg:items-end">
       <div className="flex flex-wrap gap-2">
-        {status === "diajukan" && can.pemasangan && (
+        {menungguPasang && can.pemasangan && (
           <Button as={Link} href={`/peminjaman/${id}/pemasangan`}>
             <HiOutlineWrenchScrewdriver className="me-1.5 h-4 w-4" />
             Pemasangan
@@ -48,7 +51,13 @@ export function AksiPeminjaman({ id, kode, status, can }: Props) {
             Perpanjang
           </Button>
         )}
-        {status === "diajukan" && can.cancel && (
+        {can.update && (
+          <Button as={Link} href={`/peminjaman/${id}/ubah`} color="light">
+            <HiOutlinePencilSquare className="me-1.5 h-4 w-4" />
+            Ubah
+          </Button>
+        )}
+        {menungguPasang && can.cancel && (
           <Button color="red" onClick={() => setBatal(true)}>
             <HiOutlineXCircle className="me-1.5 h-4 w-4" />
             Batalkan

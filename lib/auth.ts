@@ -1,7 +1,9 @@
 import "server-only";
 import { cache } from "react";
 import { forbidden, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { connection } from "next/server";
+import { AKSES_HEADER, decodeAkses } from "@/lib/akses-header";
 import { createClient } from "@/lib/supabase/server";
 import type { Permission } from "@/lib/permissions";
 
@@ -22,6 +24,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const { data: auth } = await supabase.auth.getClaims();
   const uid = auth?.claims?.sub;
   if (!uid) return null;
+
+  // Jalur cepat: proxy sudah memeriksa status & permission untuk request ini.
+  const akses = decodeAkses((await headers()).get(AKSES_HEADER));
+  if (akses && akses.id === uid) return akses;
 
   const [{ data: staff }, { data: perms }] = await Promise.all([
     supabase

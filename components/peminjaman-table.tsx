@@ -56,7 +56,16 @@ export function toPeminjamanRow(r: RawRow): PeminjamanRow {
   };
 }
 
-export function PeminjamanTable({ rows, empty = "Tidak ada data." }: { rows: PeminjamanRow[]; empty?: string }) {
+export function PeminjamanTable({
+  rows,
+  empty = "Tidak ada data.",
+  bisaUbah = false,
+}: {
+  rows: PeminjamanRow[];
+  empty?: string;
+  /** Tampilkan tautan "Ubah" (permission peminjaman.update). */
+  bisaUbah?: boolean;
+}) {
   return (
     <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
       <Table hoverable>
@@ -69,12 +78,13 @@ export function PeminjamanTable({ rows, empty = "Tidak ada data." }: { rows: Pem
             <TableHeadCell>Keluar</TableHeadCell>
             <TableHeadCell>Rencana Kembali</TableHeadCell>
             <TableHeadCell>Status</TableHeadCell>
+            {bisaUbah && <TableHeadCell><span className="sr-only">Aksi</span></TableHeadCell>}
           </TableRow>
         </TableHead>
         <TableBody className="divide-y">
           {rows.length === 0 && (
             <TableRow>
-              <TableCell colSpan={7} className="py-6 text-center text-gray-500">{empty}</TableCell>
+              <TableCell colSpan={bisaUbah ? 8 : 7} className="py-6 text-center text-gray-500">{empty}</TableCell>
             </TableRow>
           )}
           {rows.map((r) => (
@@ -95,6 +105,13 @@ export function PeminjamanTable({ rows, empty = "Tidak ada data." }: { rows: Pem
               <TableCell>
                 <Badge color={STATUS_PEMINJAMAN[r.status].color} className="w-fit">{STATUS_PEMINJAMAN[r.status].label}</Badge>
               </TableCell>
+              {bisaUbah && (
+                <TableCell className="text-right">
+                  <Link href={`/peminjaman/${r.id}/ubah`} className="font-medium text-cyan-700 hover:underline">
+                    Ubah
+                  </Link>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

@@ -19,6 +19,7 @@ export const PERMISSIONS = [
   "peminjaman.create",
   "peminjaman.cancel",
   "peminjaman.extend",
+  "peminjaman.update",
   "pemasangan.create",
   "pengembalian.create",
   "riwayat.view",

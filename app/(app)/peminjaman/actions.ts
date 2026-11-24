@@ -11,6 +11,7 @@ import {
   type ActionResult,
 } from "@/lib/action";
 import { witaInputToIso } from "@/lib/datetime";
+import { STATUS_PEMINJAMAN_LIST, type StatusPeminjaman } from "@/lib/labels";
 import { BATAS, namaOrang, nomorKontak, teks } from "@/lib/validation";
 
 const HARI_MS = 24 * 3600_000;
@@ -222,5 +223,91 @@ export async function perpanjangPeminjaman(input: z.input<typeof perpanjangSchem
   });
 
   if (result.ok && result.data) redirect(`/peminjaman/${result.data.id}?perpanjangan=1`);
+  return result.ok ? { ok: true } : result;
+}
+
+// ---------------------------------------------------------------------
+// Koreksi riwayat (Administrasi): ubah data peminjam, jadwal, dan status.
+// ---------------------------------------------------------------------
+const ubahSchema = z
+  .object({
+    peminjamanId: idSchema,
+    nama_peminjam: namaOrang("Nama peminjam"),
+    kontak_peminjam: nomorKontak,
+    divisi_peminjam: teks("Divisi", BATAS.divisi),
+    ruangan: teks("Ruangan", BATAS.ruangan),
+    keperluan: teks("Keperluan", BATAS.keperluanDb),
+    status: z.enum(STATUS_PEMINJAMAN_LIST as [StatusPeminjaman, ...StatusPeminjaman[]], "Status tidak valid."),
+    keterangan: z
+      .string()
+      .trim()
+      .max(BATAS.alasan, `Keterangan maksimal ${BATAS.alasan} karakter.`)
+      .optional()
+      .transform((v) => v || null),
+  });
+
+const jadwalUbahSchema = z
+  .object({
+    tgl_peminjaman: z.string().min(1, "Tanggal keluar wajib diisi."),
+    tgl_rencana_kembali: z.string().min(1, "Tanggal rencana kembali wajib diisi."),
+  })
+  .transform((v, ctx) => ({
+    tgl_peminjaman: keIso(v.tgl_peminjaman, ctx, "tgl_peminjaman"),
+    tgl_rencana_kembali: keIso(v.tgl_rencana_kembali, ctx, "tgl_rencana_kembali"),
+  }))
+  .superRefine((v, ctx) => {
+    if (new Date(v.tgl_rencana_kembali).getTime() <= new Date(v.tgl_peminjaman).getTime()) {
+      ctx.addIssue({ code: "custom", path: ["tgl_rencana_kembali"], message: "Rencana kembali harus setelah tanggal keluar." });
+    }
+  });
+
+export type UbahPeminjamanInput = z.input<typeof ubahSchema> & z.input<typeof jadwalUbahSchema>;
+
+export async function ubahPeminjaman(input: UbahPeminjamanInput): Promise<ActionResult> {
+  const result = await runAction<{ id: number }>(async () => {
+    await authorize("peminjaman.update");
+    const dataP = ubahSchema.safeParse(input);
+    const jadwal = jadwalUbahSchema.safeParse(input);
+    if (!dataP.success || !jadwal.success) {
+      const issues = [...(dataP.error?.issues ?? []), ...(jadwal.error?.issues ?? [])];
+      return validationError(new z.ZodError(issues));
+    }
+    const d = { ...dataP.data, ...jadwal.data };
+
+    // Status harus sesuai jadwal (aturan yang sama dicek ulang di database).
+    const lewat = new Date(d.tgl_rencana_kembali).getTime() <= Date.now();
+    if (d.status === "terlambat" && !lewat) {
+      return {
+        ok: false,
+        error: "Periksa kembali isian Anda.",
+        fieldErrors: { status: ["Status Terlambat hanya untuk rencana kembali yang sudah lewat."] },
+      };
+    }
+    if ((d.status === "diajukan" || d.status === "dipinjam") && lewat) {
+      return {
+        ok: false,
+        error: "Periksa kembali isian Anda.",
+        fieldErrors: { status: ["Rencana kembali sudah lewat, pilih status Terlambat."] },
+      };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("ubah_peminjaman", {
+      p_peminjaman_id: d.peminjamanId,
+      p_nama_peminjam: d.nama_peminjam,
+      p_divisi_peminjam: d.divisi_peminjam,
+      p_kontak_peminjam: d.kontak_peminjam,
+      p_ruangan: d.ruangan,
+      p_keperluan: d.keperluan,
+      p_tgl_peminjaman: d.tgl_peminjaman,
+      p_tgl_rencana_kembali: d.tgl_rencana_kembali,
+      p_status: d.status,
+      p_keterangan: d.keterangan ?? undefined,
+    });
+    if (error) return { ok: false, error: dbErrorMessage(error) };
+    return { ok: true, data: { id: d.peminjamanId } };
+  });
+
+  if (result.ok && result.data) redirect(`/peminjaman/${result.data.id}?diubah=1`);
   return result.ok ? { ok: true } : result;
 }

@@ -40,11 +40,13 @@ Pengaturan di dashboard Supabase (bukan skema):
 | `npm run db:push` | Kirim migration baru ke project online (`supabase db push --remote`) |
 | `npm run db:types` | Generate tipe TypeScript dari skema |
 | `npm run seed:admin` / `npm run seed:demo` | Seeder (aman dijalankan ulang) |
-| `npm run test:db` | Uji lapis database: RBAC, data master, peminjaman, pemasangan/pengembalian, perpanjangan/terlambat |
+| `npm run test:db` | Uji lapis database: RBAC, data master, peminjaman, pemasangan/pengembalian, perpanjangan/terlambat, koreksi manual |
 | `npm run test:web` | Uji akses halaman lewat HTTP (jalankan dulu `npm run build && npx next start -p 3123`) |
 
+Ukur waktu muat halaman (server produksi harus berjalan di port 3123): `npx tsx --env-file=.env.local scripts/tests/bench.ts`.
+
 Uji membuat akun sementara dan data transaksi, lalu membersihkannya kembali (aset demo dikembalikan ke
-`tersedia/baik`). Uji pg_cron sungguhan (menunggu ≤15 menit): `npx tsx --env-file=.env.local scripts/tests/cron-nyata.test.ts`.
+`tersedia/baik`). Uji pg_cron sungguhan (menunggu ≤2 menit): `npx tsx --env-file=.env.local scripts/tests/cron-nyata.test.ts`.
 
 ## Arsitektur singkat
 
@@ -62,8 +64,19 @@ Uji membuat akun sementara dan data transaksi, lalu membersihkannya kembali (ase
   (`reservasi_id_kejadian`), foto dikompres di browser (≤1600 px, JPEG) dan diunggah ke
   `pemasangan/{id}/{uuid}.jpg`, lalu RPC memverifikasi file benar-benar ada sebelum menyimpan. Ditampilkan dengan
   signed URL.
-- **pg_cron** `tandai-peminjaman-terlambat` setiap 15 menit (UTC) → `tandai_terlambat()`; notifikasi
+- **pg_cron** `tandai-peminjaman-terlambat` setiap menit → `tandai_terlambat()`; notifikasi
   `jenis='terlambat'` dijaga unique index sehingga tidak ganda.
+- **Terlambat saat dicatat:** bila rencana kembali sudah lewat ketika peminjaman dibuat, `buat_peminjaman` langsung
+  memberi status `terlambat` (bukan `diajukan`). Unitnya belum dipasang, jadi pemasangan & pembatalan tetap bisa
+  dilakukan; pengembalian & perpanjangan baru bisa setelah dipasang (`sudah_terpasang()`).
+- **Koreksi riwayat** (`/peminjaman/{id}/ubah`, permission `peminjaman.update`, role Administrasi): RPC
+  `ubah_peminjaman` memperbaiki data peminjam, jadwal, dan status. Status yang boleh dipilih: belum dipasang →
+  diajukan/terlambat/dibatalkan; sudah dipasang → dipinjam/terlambat/selesai; sudah dikembalikan atau diperpanjang →
+  dikunci. Terlambat hanya bila rencana kembali sudah lewat (diajukan/dipinjam sebaliknya). Menutup manual melepas
+  unit (kembali `tersedia`), mengaktifkan kembali memeriksa unit masih bebas. Setiap perubahan tercatat di timeline.
+- **Sesi dibaca sekali per request:** `proxy.ts` membaca profil + permission lalu meneruskannya lewat header request
+  internal `x-peminjaman-akses` (header kiriman klien selalu dibuang). `getCurrentUser()` memakainya bila `id`-nya cocok
+  dengan JWT, sehingga layout/halaman/server action tidak mengulang query. Notifikasi dimuat dalam `Suspense` terpisah.
 - **Waktu** disimpan `timestamptz`, ditampilkan WITA (`Asia/Makassar`) dengan format `dd/MM/yyyy HH:mm`.
 
 ### Tambahan di luar spesifikasi (disepakati)

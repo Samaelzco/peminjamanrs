@@ -1,12 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/lib/database.types";
+import { AKSES_HEADER, encodeAkses } from "@/lib/akses-header";
+import type { Permission } from "@/lib/permissions";
 import { permissionUntukRute } from "@/lib/route-permissions";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./env";
 
 const PUBLIC_PATHS = ["/login"];
 
 export async function updateSession(request: NextRequest) {
+  // Jangan pernah meneruskan header akses kiriman klien.
+  request.headers.delete(AKSES_HEADER);
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -35,25 +39,47 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (userId) {
-    // Rute yang butuh permission khusus (hanya untuk navigasi halaman; server action memeriksa sendiri).
-    const butuh = request.method === "GET" || request.method === "HEAD" ? permissionUntukRute(path) : null;
+    // Status, profil, dan permission dibaca sekali di sini lalu diteruskan ke render (lib/auth.ts).
+    const [{ data: staff }, { data: perms }] = await Promise.all([
+      supabase.from("staff_it").select("id, nama, email, status, role_id, roles(nama)").eq("id", userId).maybeSingle(),
+      supabase.rpc("my_permissions"),
+    ]);
 
     // User non-aktif (atau tanpa profil) tidak boleh memakai aplikasi.
-    const [{ data: staff }, perms] = await Promise.all([
-      supabase.from("staff_it").select("status").eq("id", userId).maybeSingle(),
-      butuh ? supabase.rpc("my_permissions") : Promise.resolve(null),
-    ]);
     if (!staff || staff.status !== "aktif") {
       await supabase.auth.signOut({ scope: "local" });
       return redirectWithCookies(request, response, "/login", "error=nonaktif");
     }
 
-    if (butuh && !butuh.some((p) => perms?.data?.includes(p))) {
+    // Rute yang butuh permission khusus (hanya untuk navigasi halaman; server action memeriksa sendiri).
+    const butuh = request.method === "GET" || request.method === "HEAD" ? permissionUntukRute(path) : null;
+    if (butuh && !butuh.some((p) => perms?.includes(p))) {
       // Tampilkan halaman "Akses ditolak" dengan status HTTP 403 (URL tetap).
       const url = request.nextUrl.clone();
       url.pathname = "/akses-ditolak";
       url.search = "";
       const res = NextResponse.rewrite(url);
+      response.cookies.getAll().forEach((c) => res.cookies.set(c));
+      return res;
+    }
+
+    if (!isPublic) {
+      const headers = new Headers(request.headers);
+      headers.set(
+        AKSES_HEADER,
+        encodeAkses({
+          id: staff.id,
+          nama: staff.nama,
+          email: staff.email,
+          roleId: staff.role_id,
+          roleNama: staff.roles?.nama ?? "-",
+          permissions: (perms ?? []) as Permission[],
+        }),
+      );
+      const res = NextResponse.next({ request: { headers } });
+      response.headers.forEach((value, key) => {
+        if (key !== "set-cookie" && !key.startsWith("x-middleware-")) res.headers.set(key, value);
+      });
       response.cookies.getAll().forEach((c) => res.cookies.set(c));
       return res;
     }

@@ -26,7 +26,7 @@ export const metadata: Metadata = { title: "Detail Peminjaman" };
 export default async function DetailPeminjamanPage({ params, searchParams }: PageProps<"/peminjaman/[id]">) {
   const user = await requireAnyPermission("peminjaman.view", "riwayat.view");
   const { id } = await params;
-  const { baru, perpanjangan } = await searchParams;
+  const { baru, perpanjangan, diubah } = await searchParams;
   const pid = Number(id);
   if (!Number.isInteger(pid) || pid <= 0) notFound();
 
@@ -54,8 +54,9 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
           id={p.id}
           kode={p.kode}
           status={p.status}
-          tglRencanaKembali={p.tglRencanaKembali}
+          terpasang={p.terpasang}
           can={{
+            update: user.permissions.includes("peminjaman.update"),
             pemasangan: user.permissions.includes("pemasangan.create"),
             pengembalian: user.permissions.includes("pengembalian.create"),
             extend: user.permissions.includes("peminjaman.extend"),
@@ -65,9 +66,13 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
       </div>
 
       {baru === "1" && (
-        <Alert color="success" className="mb-4">
-          Peminjaman {p.kode} tersimpan dengan status Diajukan. Petugas Sarpras sudah diberi notifikasi.
+        <Alert color={p.status === "terlambat" ? "warning" : "success"} className="mb-4">
+          Peminjaman {p.kode} tersimpan dengan status {st.label}
+          {p.status === "terlambat" && " karena rencana kembali sudah lewat"}. Petugas Sarpras sudah diberi notifikasi.
         </Alert>
+      )}
+      {diubah === "1" && (
+        <Alert color="success" className="mb-4">Perubahan {p.kode} tersimpan.</Alert>
       )}
       {perpanjangan === "1" && p.sebelumnya && (
         <Alert color="success" className="mb-4">
@@ -77,6 +82,7 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
       {p.status === "terlambat" && (
         <Alert color="failure" className="mb-4">
           Terlambat {formatDurasi(terlambatMenit)} dari rencana kembali {formatWita(p.tglRencanaKembali)}.
+          {!p.terpasang && " Unit belum dipasang."}
         </Alert>
       )}
 

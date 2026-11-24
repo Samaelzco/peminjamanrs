@@ -27,7 +27,7 @@ function awalHariWita(tgl: string, tambahHari = 0) {
 }
 
 export default async function RiwayatPage({ searchParams }: PageProps<"/riwayat">) {
-  await requirePermission("riwayat.view");
+  const user = await requirePermission("riwayat.view");
   const sp = await searchParams;
 
   const q = one(sp.q)?.trim().slice(0, 60) ?? "";
@@ -85,7 +85,9 @@ export default async function RiwayatPage({ searchParams }: PageProps<"/riwayat"
           ? "Tidak ada peminjaman yang cocok."
           : `Menampilkan ${from + 1}–${Math.min(from + PER_HALAMAN, total)} dari ${total} peminjaman`}
       </p>
-      <PeminjamanTable rows={(data ?? []).map(toPeminjamanRow)} empty="Tidak ada peminjaman yang cocok." />
+      <PeminjamanTable rows={(data ?? []).map(toPeminjamanRow)} empty="Tidak ada peminjaman yang cocok."
+        bisaUbah={user.permissions.includes("peminjaman.update")}
+      />
       {totalHalaman > 1 && <RiwayatPagination halaman={Math.min(halaman, totalHalaman)} totalHalaman={totalHalaman} />}
     </>
   );
