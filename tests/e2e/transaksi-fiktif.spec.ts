@@ -90,7 +90,7 @@ async function simpanPeminjaman(page: Page, label: string) {
 
 async function pilihFoto(page: Page, files: string[]) {
   await page.locator('input[type="file"][multiple]').setInputFiles(files);
-  await expect(page.getByText(`${files.length} foto. Minimal 1 foto.`)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByAltText("Pratinjau foto")).toHaveCount(files.length, { timeout: 30_000 });
 }
 
 async function pemasangan(page: Page, id: number, jumlahFoto: number) {

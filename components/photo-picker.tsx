@@ -114,9 +114,7 @@ export function PhotoPicker({
           ))}
         </ul>
       )}
-      <HelperText color={error || localError ? "failure" : undefined}>
-        {error ?? localError ?? `${photos.length} foto. Minimal 1 foto. Foto otomatis dikompres (lebar maks. 1600 px).`}
-      </HelperText>
+      {(error || localError) && <HelperText color="failure">{error ?? localError}</HelperText>}
     </div>
   );
 }

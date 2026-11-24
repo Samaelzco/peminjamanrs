@@ -58,11 +58,11 @@ export function RiwayatFilters({ value }: { value: Value }) {
       </div>
       <div>
         <Label htmlFor="dari" className="mb-1.5 block">Tanggal keluar dari</Label>
-        <DateTimeField id="dari" name="dari" tanggalSaja defaultValue={value.dari} hint={null} />
+        <DateTimeField id="dari" name="dari" tanggalSaja defaultValue={value.dari} />
       </div>
       <div>
         <Label htmlFor="sampai" className="mb-1.5 block">Sampai</Label>
-        <DateTimeField id="sampai" name="sampai" tanggalSaja defaultValue={value.sampai} hint={null} />
+        <DateTimeField id="sampai" name="sampai" tanggalSaja defaultValue={value.sampai} />
       </div>
       <div className="flex items-start gap-2 pt-7">
         <Button type="submit" disabled={pending}>

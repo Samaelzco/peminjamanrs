@@ -227,12 +227,10 @@ function AkunFormModal({
                 autoComplete="new-password"
                 maxLength={BATAS.passwordMax}
                 required={mode === "create"}
-                placeholder={mode === "edit" ? "Kosongkan jika tidak diganti" : "Minimal 8 karakter, huruf & angka"}
+                placeholder={mode === "edit" ? "Kosongkan jika tidak diganti" : undefined}
                 color={err("password") ? "failure" : undefined}
               />
-              <HelperText color={err("password") ? "failure" : undefined}>
-                {err("password") ?? `${BATAS.passwordMin}–${BATAS.passwordMax} karakter, mengandung huruf dan angka.`}
-              </HelperText>
+              {err("password") && <HelperText color="failure">{err("password")}</HelperText>}
             </div>
             <div>
               <Label htmlFor="role_id" className="mb-1.5 block">Role</Label>
@@ -243,10 +241,7 @@ function AkunFormModal({
                 ))}
               </Select>
               {self && (
-                <>
-                  <input type="hidden" name="role_id" value={akun?.roleId} />
-                  <HelperText>Anda tidak dapat mengubah role akun Anda sendiri.</HelperText>
-                </>
+                <input type="hidden" name="role_id" value={akun?.roleId} />
               )}
               {err("role_id") && <HelperText color="failure">{err("role_id")}</HelperText>}
             </div>

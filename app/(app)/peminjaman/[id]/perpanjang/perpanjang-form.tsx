@@ -43,7 +43,6 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
           defaultValue={defaultTanggal}
           required
           error={fieldErrors.tgl_rencana_kembali?.[0]}
-          hint={`Format dd/mm/yyyy jj:mm (24 jam, WITA). Maksimal ${BATAS.durasiMaksHari} hari dari sekarang.`}
         />
       </div>
       <div>
@@ -58,10 +57,7 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
           onChange={(e) => setAlasan(e.target.value)}
           color={fieldErrors.alasan ? "failure" : undefined}
         />
-        <HelperText color={fieldErrors.alasan ? "failure" : undefined}>
-          {fieldErrors.alasan?.[0] ??
-            `${alasan.length}/${BATAS.alasan} karakter. Alasan ditambahkan ke keperluan pada peminjaman baru.`}
-        </HelperText>
+        {fieldErrors.alasan && <HelperText color="failure">{fieldErrors.alasan[0]}</HelperText>}
       </div>
       <div className="flex justify-end">
         <Button type="submit" disabled={pending}>

@@ -219,9 +219,6 @@ function AsetFormModal({
                   ))}
                 </Select>
               )}
-              <HelperText>
-                {aset ? "Kategori dan kode aset tidak dapat diubah." : "Kode aset dibuat otomatis, contoh LPT-004."}
-              </HelperText>
               {err("kategori_id") && <HelperText color="failure">{err("kategori_id")}</HelperText>}
             </div>
             <div>
@@ -232,7 +229,6 @@ function AsetFormModal({
             <div>
               <Label htmlFor="deskripsi" className="mb-1.5 block">Deskripsi (opsional)</Label>
               <Textarea id="deskripsi" name="deskripsi" rows={2} maxLength={BATAS.deskripsiAset} defaultValue={aset?.deskripsi ?? ""} />
-              <HelperText className="text-xs text-gray-500">Maksimal {BATAS.deskripsiAset} karakter.</HelperText>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -250,7 +246,6 @@ function AsetFormModal({
                   <option value="dalam_perbaikan">Dalam Perbaikan</option>
                   <option value="hilang">Hilang</option>
                 </Select>
-                {dipinjam && <HelperText>Status dipinjam diatur oleh alur peminjaman.</HelperText>}
               </div>
             </div>
           </div>

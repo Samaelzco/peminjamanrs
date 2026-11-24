@@ -188,13 +188,7 @@ function KategoriFormModal({
                 disabled={prefixLocked}
                 color={err("kode_prefix") ? "failure" : undefined}
               />
-              {prefixLocked ? (
-                <HelperText>Prefix tidak dapat diubah karena kategori sudah memiliki aset.</HelperText>
-              ) : (
-                <HelperText color={err("kode_prefix") ? "failure" : undefined}>
-                  {err("kode_prefix") ?? "2–5 huruf kapital. Dipakai untuk kode aset, contoh LPT-001."}
-                </HelperText>
-              )}
+              {err("kode_prefix") && <HelperText color="failure">{err("kode_prefix")}</HelperText>}
             </div>
           </div>
         </ModalBody>

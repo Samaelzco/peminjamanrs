@@ -125,7 +125,6 @@ export function PeminjamanForm({
               id="kontak_peminjam"
               label="Nomor kontak"
               error={fe("kontak_peminjam")}
-              hint={`Hanya angka, ${BATAS.kontakMin}–${BATAS.kontakMax} digit, diawali 0 atau 62.`}
             >
               <TextInput
                 id="kontak_peminjam"
@@ -153,7 +152,6 @@ export function PeminjamanForm({
               id="keperluan"
               label="Keperluan"
               error={fe("keperluan")}
-              hint={`${keperluan.length}/${BATAS.keperluan} karakter`}
             >
               <Textarea
                 id="keperluan"
@@ -170,9 +168,6 @@ export function PeminjamanForm({
 
         <Card>
           <h2 className="text-base font-semibold text-gray-900">Jadwal (WITA)</h2>
-          <p className="-mt-2 text-xs text-gray-500">
-            Lama peminjaman maksimal {BATAS.durasiMaksHari} hari. Tanggal keluar paling lama {BATAS.mundurMaksHari} hari ke belakang.
-          </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label htmlFor="tgl_peminjaman" className="mb-1.5 block">Tanggal & jam keluar</Label>
@@ -392,24 +387,18 @@ function Field({
   id,
   label,
   error,
-  hint,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
-  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
       <Label htmlFor={id} className="mb-1.5 block">{label}</Label>
       {children}
-      {error ? (
-        <HelperText color="failure">{error}</HelperText>
-      ) : (
-        hint && <HelperText className="text-xs text-gray-500">{hint}</HelperText>
-      )}
+      {error && <HelperText color="failure">{error}</HelperText>}
     </div>
   );
 }

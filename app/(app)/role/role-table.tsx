@@ -184,7 +184,6 @@ function RoleFormModal({
             <div>
               <Label htmlFor="deskripsi" className="mb-1.5 block">Deskripsi</Label>
               <Textarea id="deskripsi" name="deskripsi" rows={3} maxLength={BATAS.deskripsiRole} defaultValue={role?.deskripsi ?? ""} />
-              <HelperText className="text-xs text-gray-500">Maksimal {BATAS.deskripsiRole} karakter.</HelperText>
             </div>
           </div>
         </ModalBody>

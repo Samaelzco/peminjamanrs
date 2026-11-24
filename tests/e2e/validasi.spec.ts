@@ -48,7 +48,6 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
     await expect(page.locator("#ruangan")).toHaveAttribute("maxlength", "100");
     await expect(page.locator("#keperluan")).toHaveAttribute("maxlength", "500");
     await page.locator("#keperluan").fill("Rapat");
-    await expect(page.getByText("5/500 karakter")).toBeVisible();
   });
 
   await test.step("T3: tanggal tampil dd/MM/yyyy HH:mm, masker otomatis, tanggal mustahil ditolak", async () => {

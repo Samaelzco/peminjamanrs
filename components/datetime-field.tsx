@@ -50,7 +50,6 @@ export function DateTimeField({
   required,
   error,
   tanggalSaja = false,
-  hint,
   onChange,
 }: {
   id: string;
@@ -60,8 +59,6 @@ export function DateTimeField({
   required?: boolean;
   error?: string;
   tanggalSaja?: boolean;
-  /** Teks bantuan; null untuk menyembunyikan. */
-  hint?: string | null;
   onChange?: (lokal: string | null) => void;
 }) {
   const [teks, setTeks] = useState(defaultValue ? lokalKeTampilan(defaultValue) : "");
@@ -70,7 +67,6 @@ export function DateTimeField({
   const lokal = tampilanKeLokal(teks, tanggalSaja);
   const format = tanggalSaja ? "dd/mm/yyyy" : "dd/mm/yyyy jj:mm";
   const errorLokal = disentuh && teks && !lokal ? `Tidak valid. Format: ${format}${tanggalSaja ? "" : " (24 jam)"}.` : null;
-  const bantuan = hint === undefined ? `Format ${format}${tanggalSaja ? "" : " (24 jam, WITA)"}` : hint;
 
   function set(v: string) {
     setTeks(v);
@@ -126,9 +122,9 @@ export function DateTimeField({
         />
       </div>
       <input type="hidden" name={name} value={lokal ?? ""} />
-      {(error || errorLokal || bantuan) && (
-        <HelperText id={`${id}-help`} color={error || errorLokal ? "failure" : undefined} className="text-xs">
-          {error ?? errorLokal ?? bantuan}
+      {(error || errorLokal) && (
+        <HelperText id={`${id}-help`} color="failure" className="text-xs">
+          {error ?? errorLokal}
         </HelperText>
       )}
     </div>

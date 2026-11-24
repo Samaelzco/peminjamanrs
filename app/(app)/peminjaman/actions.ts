@@ -86,19 +86,23 @@ function keIso(v: string, ctx: z.RefinementCtx, path: string): string {
   }
 }
 
-const peminjamanSchema = z
+const dataPeminjamSchema = z.object({
+  nama_peminjam: namaOrang("Nama peminjam"),
+  kontak_peminjam: nomorKontak,
+  divisi_peminjam: teks("Divisi", BATAS.divisi),
+  ruangan: teks("Ruangan", BATAS.ruangan),
+  keperluan: teks("Keperluan", BATAS.keperluan),
+  aset_ids: z.array(idSchema).min(1, "Tambahkan minimal satu unit.").max(200),
+});
+
+// Jadwal divalidasi terpisah supaya error tanggal tetap tampil walaupun kolom lain juga salah
+// (refinement zod tidak berjalan bila objek yang sama sudah punya error).
+const jadwalSchema = z
   .object({
-    nama_peminjam: namaOrang("Nama peminjam"),
-    kontak_peminjam: nomorKontak,
-    divisi_peminjam: teks("Divisi", BATAS.divisi),
-    ruangan: teks("Ruangan", BATAS.ruangan),
-    keperluan: teks("Keperluan", BATAS.keperluan),
     tgl_peminjaman: z.string().min(1, "Tanggal keluar wajib diisi."),
     tgl_rencana_kembali: z.string().min(1, "Tanggal rencana kembali wajib diisi."),
-    aset_ids: z.array(idSchema).min(1, "Tambahkan minimal satu unit.").max(200),
   })
   .transform((v, ctx) => ({
-    ...v,
     tgl_peminjaman: keIso(v.tgl_peminjaman, ctx, "tgl_peminjaman"),
     tgl_rencana_kembali: keIso(v.tgl_rencana_kembali, ctx, "tgl_rencana_kembali"),
   }))
@@ -123,14 +127,20 @@ const peminjamanSchema = z
     }
   });
 
-export type PeminjamanInput = z.input<typeof peminjamanSchema>;
+type PeminjamanInputData = z.input<typeof dataPeminjamSchema> & z.input<typeof jadwalSchema>;
+
+export type PeminjamanInput = PeminjamanInputData;
 
 export async function buatPeminjaman(input: PeminjamanInput): Promise<ActionResult> {
   const result = await runAction<{ id: number }>(async () => {
     await authorize("peminjaman.create");
-    const parsed = peminjamanSchema.safeParse(input);
-    if (!parsed.success) return validationError(parsed.error);
-    const d = parsed.data;
+    const dataP = dataPeminjamSchema.safeParse(input);
+    const jadwal = jadwalSchema.safeParse(input);
+    if (!dataP.success || !jadwal.success) {
+      const issues = [...(dataP.error?.issues ?? []), ...(jadwal.error?.issues ?? [])];
+      return validationError(new z.ZodError(issues));
+    }
+    const d = { ...dataP.data, ...jadwal.data };
 
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("buat_peminjaman", {
@@ -181,24 +191,24 @@ export async function perpanjangPeminjaman(input: z.input<typeof perpanjangSchem
   const result = await runAction<{ id: number }>(async () => {
     await authorize("peminjaman.extend");
     const parsed = perpanjangSchema.safeParse(input);
-    if (!parsed.success) return validationError(parsed.error);
-
-    let tgl: string;
+    // Cek tanggal terpisah supaya error tanggal & alasan tampil bersamaan.
+    const errTgl: string[] = [];
+    let tgl = "";
     try {
-      tgl = witaInputToIso(parsed.data.tgl_rencana_kembali);
+      tgl = witaInputToIso(String(input?.tgl_rencana_kembali ?? ""));
+      const t = new Date(tgl).getTime();
+      if (t <= Date.now()) errTgl.push("Rencana kembali baru harus setelah waktu sekarang.");
+      else if (t > Date.now() + BATAS.durasiMaksHari * HARI_MS) {
+        errTgl.push(`Perpanjangan maksimal ${BATAS.durasiMaksHari} hari dari sekarang.`);
+      }
     } catch {
-      return { ok: false, error: "Periksa kembali isian Anda.", fieldErrors: { tgl_rencana_kembali: ["Tanggal/jam tidak valid. Format: dd/mm/yyyy jj:mm."] } };
+      errTgl.push("Tanggal/jam tidak valid. Format: dd/mm/yyyy jj:mm.");
     }
-    const t = new Date(tgl).getTime();
-    if (t <= Date.now()) {
-      return { ok: false, error: "Periksa kembali isian Anda.", fieldErrors: { tgl_rencana_kembali: ["Rencana kembali baru harus setelah waktu sekarang."] } };
-    }
-    if (t > Date.now() + BATAS.durasiMaksHari * HARI_MS) {
-      return {
-        ok: false,
-        error: "Periksa kembali isian Anda.",
-        fieldErrors: { tgl_rencana_kembali: [`Perpanjangan maksimal ${BATAS.durasiMaksHari} hari dari sekarang.`] },
-      };
+    if (!parsed.success || errTgl.length) {
+      const fieldErrors: Record<string, string[]> = {};
+      for (const issue of parsed.error?.issues ?? []) (fieldErrors[issue.path.join(".")] ??= []).push(issue.message);
+      if (errTgl.length) fieldErrors.tgl_rencana_kembali = errTgl;
+      return { ok: false, error: "Periksa kembali isian Anda.", fieldErrors };
     }
 
     const supabase = await createClient();

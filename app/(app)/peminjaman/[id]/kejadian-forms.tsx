@@ -6,7 +6,6 @@ import {
   Alert,
   Button,
   Card,
-  HelperText,
   Label,
   Modal,
   ModalBody,
@@ -114,9 +113,6 @@ export function PemasanganForm({ peminjamanId, units }: { peminjamanId: number; 
 
       <Card>
         <h2 className="text-base font-semibold text-gray-900">Kondisi Keluar per Unit</h2>
-        <p className="-mt-2 text-sm text-gray-500">
-          Tes setiap unit. Jika gagal dites, klik Ganti Unit untuk menukar dengan unit lain di kategori yang sama.
-        </p>
         <ul className="divide-y divide-gray-100">
           {units.map((u) => (
             <li key={u.detailId} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -245,7 +241,6 @@ function GantiUnitModal({
             <div>
               <Label htmlFor="alasan" className="mb-1.5 block">Alasan</Label>
               <Textarea id="alasan" name="alasan" rows={2} required maxLength={BATAS.alasan} placeholder="Contoh: tidak menyala saat dites" />
-              <HelperText>Unit {unit.kodeAset} akan ditandai Dalam Perbaikan.</HelperText>
             </div>
           </div>
         </ModalBody>
@@ -301,7 +296,6 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
     >
       <Card>
         <h2 className="text-base font-semibold text-gray-900">Kondisi Masuk per Unit</h2>
-        <p className="-mt-2 text-sm text-gray-500">Semua unit dikembalikan sekaligus. Catatan wajib untuk unit rusak atau hilang.</p>
         <ul className="divide-y divide-gray-100">
           {units.map((u) => (
             <li key={u.detailId} className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
