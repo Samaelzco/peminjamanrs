@@ -9,7 +9,41 @@ export type Database = {
   }
   "public": {
           Tables: {
-            "permissions": {
+            "aset": {
+                  Row: {
+                    "created_at": string,"deskripsi": string | null,"id": number,"kategori_id": number,"kode_aset": string,"kondisi": Database["public"]['Enums']["kondisi_aset"],"nama_aset": string,"status": Database["public"]['Enums']["status_aset"],"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"deskripsi"?: string | null,"id"?: never,"kategori_id": number,"kode_aset"?: string,"kondisi"?: Database["public"]['Enums']["kondisi_aset"],"nama_aset": string,"status"?: Database["public"]['Enums']["status_aset"],"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"deskripsi"?: string | null,"id"?: never,"kategori_id"?: number,"kode_aset"?: string,"kondisi"?: Database["public"]['Enums']["kondisi_aset"],"nama_aset"?: string,"status"?: Database["public"]['Enums']["status_aset"],"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "aset_kategori_id_fkey"
+      columns: ["kategori_id"]
+isOneToOne: false
+      referencedRelation: "kategori"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"kategori": {
+                  Row: {
+                    "created_at": string,"id": number,"kode_prefix": string,"nama": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"kode_prefix": string,"nama": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"kode_prefix"?: string,"nama"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"permissions": {
                   Row: {
                     "deskripsi": string | null,"id": number,"modul": string,"nama": string
                   }
@@ -100,7 +134,7 @@ isOneToOne: false
                            }
           }
           Enums: {
-            "status_akun": "aktif"|"non_aktif"
+            "kondisi_aset": "baik"|"rusak","status_akun": "aktif"|"non_aktif","status_aset": "tersedia"|"dipinjam"|"dalam_perbaikan"|"hilang"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -216,7 +250,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "status_akun": ["aktif", "non_aktif"]
+            "kondisi_aset": ["baik", "rusak"],"status_akun": ["aktif", "non_aktif"],"status_aset": ["tersedia", "dipinjam", "dalam_perbaikan", "hilang"]
           }
         }
 } as const

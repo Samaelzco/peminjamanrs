@@ -13,7 +13,8 @@
     "seed:admin": "tsx --env-file=.env.local scripts/seed-admin.ts",
     "seed:demo": "tsx --env-file=.env.local scripts/seed-demo.ts",
     "test:rbac": "tsx --env-file=.env.local scripts/tests/rbac.test.ts",
-    "test:http": "tsx --env-file=.env.local scripts/tests/http.test.ts"
+    "test:http": "tsx --env-file=.env.local scripts/tests/http.test.ts",
+    "test:master": "tsx --env-file=.env.local scripts/tests/master.test.ts"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

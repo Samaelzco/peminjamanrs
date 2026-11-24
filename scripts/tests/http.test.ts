@@ -63,6 +63,24 @@ async function main() {
       const html = await r.text();
       return (r.status === 403 || html.includes("Akses ditolak")) || `status ${r.status}`;
     });
+    await check("Sarpras bisa membuka Data Aset (dengan tombol Tambah Aset)", async () => {
+      const r = await get("/aset", cs);
+      const html = await r.text();
+      return (r.status === 200 && html.includes("LPT-001") && html.includes("Tambah Aset")) || `status ${r.status}`;
+    });
+    await check("Admin melihat Data Aset tanpa tombol Tambah Aset", async () => {
+      const html = await (await get("/aset", ca)).text();
+      return (html.includes("LPT-001") && !html.includes("Tambah Aset")) || "tidak sesuai";
+    });
+    await check("Filter aset berdasarkan kategori bekerja", async () => {
+      const { data: prj } = await admin.from("kategori").select("id").eq("kode_prefix", "PRJ").single();
+      const html = await (await get(`/aset?kategori=${prj!.id}`, cs)).text();
+      return (html.includes("PRJ-001") && !html.includes("LPT-001")) || "filter tidak sesuai";
+    });
+    await check("Sarpras bisa membuka Kategori", async () => {
+      const r = await get("/kategori", cs);
+      return (r.status === 200 && (await r.text()).includes("Proyektor")) || `status ${r.status}`;
+    });
     await check("User non_aktif dialihkan ke /login?error=nonaktif", async () => {
       await admin.from("staff_it").update({ status: "non_aktif" }).eq("id", sar.id);
       const r = await get("/", cs);
