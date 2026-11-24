@@ -32,16 +32,35 @@ export async function updateSession(request: NextRequest) {
   if (!userId && !isPublic) {
     return redirectWithCookies(request, response, "/login");
   }
+
+  if (userId) {
+    // User non-aktif (atau tanpa profil) tidak boleh memakai aplikasi.
+    const { data: staff } = await supabase
+      .from("staff_it")
+      .select("status")
+      .eq("id", userId)
+      .maybeSingle();
+    if (!staff || staff.status !== "aktif") {
+      await supabase.auth.signOut({ scope: "local" });
+      return redirectWithCookies(request, response, "/login", "error=nonaktif");
+    }
+  }
+
   if (userId && isPublic) {
     return redirectWithCookies(request, response, "/");
   }
   return response;
 }
 
-function redirectWithCookies(request: NextRequest, from: NextResponse, to: string) {
+function redirectWithCookies(
+  request: NextRequest,
+  from: NextResponse,
+  to: string,
+  search = "",
+) {
   const url = request.nextUrl.clone();
   url.pathname = to;
-  url.search = "";
+  url.search = search;
   const res = NextResponse.redirect(url);
   from.cookies.getAll().forEach((c) => res.cookies.set(c));
   return res;
