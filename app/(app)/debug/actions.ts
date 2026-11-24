@@ -50,8 +50,8 @@ export async function resetDataDemo(konfirmasi: string): Promise<ActionResult> {
       ok: true,
       message:
         `Reset selesai: ${r.peminjaman_dihapus} peminjaman dan ${foto} foto dihapus` +
-        (r.aset_lain_dihapus ? `, ${r.aset_lain_dihapus} aset tambahan dihapus` : "") +
-        (r.kategori_lain_dihapus ? `, ${r.kategori_lain_dihapus} kategori tambahan dihapus` : "") +
+        (r.aset_lain_dihapus ? `, ${r.aset_lain_dihapus} aset di luar data demo dihapus` : "") +
+        (r.kategori_lain_dihapus ? `, ${r.kategori_lain_dihapus} kategori di luar data demo dihapus` : "") +
         ". 8 aset demo kembali tersedia/baik." +
         catatanFoto,
     };

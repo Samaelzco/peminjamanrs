@@ -14,9 +14,9 @@ async function main() {
   try {
     const a = await signIn(adm.email, adm.password);
     const cookie = await sessionCookie(adm.email, adm.password);
-    const [lpt1, prj3] = await asetIds(a, ["LPT-001", "PRJ-003"]);
+    const [lpt1, prj3] = await asetIds(a, ["TI-LPT-001", "TI-PRJ-002"]);
 
-    // 22 peminjaman dibatalkan (LPT-001), tanggal keluar mundur per hari.
+    // 22 peminjaman dibatalkan (TI-LPT-001), tanggal keluar mundur per hari.
     for (let i = 0; i < 22; i++) {
       const keluar = new Date(Date.UTC(2026, 0, 1 + i, 2, 0)); // 10:00 WITA
       const { data, error } = await a.rpc("buat_peminjaman", {
@@ -63,8 +63,8 @@ async function main() {
       const html = await get(`/riwayat?q=${kode(dibuat[5])}`, cookie);
       return (html.includes(kode(dibuat[5])) && html.includes("dari 1 peminjaman")) || "tidak cocok";
     });
-    await check("Cari kode aset (PRJ-003)", async () => {
-      const html = await get("/riwayat?q=PRJ-003", cookie);
+    await check("Cari kode aset (TI-PRJ-002)", async () => {
+      const html = await get("/riwayat?q=TI-PRJ-002", cookie);
       return (html.includes(kode(dibuat[2])) && html.includes("dari 1 peminjaman")) || "tidak cocok";
     });
     await check("Filter status Diajukan", async () => {
@@ -76,7 +76,7 @@ async function main() {
       return html.includes("dari 3 peminjaman") || "tidak cocok";
     });
   } finally {
-    await bersihkan(dibuat, ["LPT-001", "PRJ-003"]);
+    await bersihkan(dibuat, ["TI-LPT-001", "TI-PRJ-002"]);
     await cleanupUser(adm.id);
   }
   summary();
@@ -84,6 +84,6 @@ async function main() {
 
 main().catch(async (e) => {
   console.error(e);
-  await admin.from("aset").update({ status: "tersedia" }).in("kode_aset", ["LPT-001", "PRJ-003"]);
+  await admin.from("aset").update({ status: "tersedia" }).in("kode_aset", ["TI-LPT-001", "TI-PRJ-002"]);
   process.exit(1);
 });

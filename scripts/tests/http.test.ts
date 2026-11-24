@@ -66,16 +66,16 @@ async function main() {
     await check("Sarpras bisa membuka Data Aset (dengan tombol Tambah Aset)", async () => {
       const r = await get("/aset", cs);
       const html = await r.text();
-      return (r.status === 200 && html.includes("LPT-001") && html.includes("Tambah Aset")) || `status ${r.status}`;
+      return (r.status === 200 && html.includes("TI-LPT-001") && html.includes("Tambah Aset")) || `status ${r.status}`;
     });
     await check("Admin melihat Data Aset tanpa tombol Tambah Aset", async () => {
       const html = await (await get("/aset", ca)).text();
-      return (html.includes("LPT-001") && !html.includes("Tambah Aset")) || "tidak sesuai";
+      return (html.includes("TI-LPT-001") && !html.includes("Tambah Aset")) || "tidak sesuai";
     });
     await check("Filter aset berdasarkan kategori bekerja", async () => {
-      const { data: prj } = await admin.from("kategori").select("id").eq("kode_prefix", "PRJ").single();
+      const { data: prj } = await admin.from("kategori").select("id").eq("nama", "Proyektor").single();
       const html = await (await get(`/aset?kategori=${prj!.id}`, cs)).text();
-      return (html.includes("PRJ-001") && !html.includes("LPT-001")) || "filter tidak sesuai";
+      return (html.includes("TI-PRJ-001") && !html.includes("TI-LPT-001")) || "filter tidak sesuai";
     });
     await check("Sarpras bisa membuka Kategori", async () => {
       const r = await get("/kategori", cs);
@@ -91,11 +91,11 @@ async function main() {
     await check("Detail peminjaman tampil (Admin: Batalkan, Sarpras: Pemasangan)", async () => {
       const { signIn } = await import("./helpers");
       const a = await signIn(adm.email, adm.password);
-      const { data: lpt } = await a.from("kategori").select("id").eq("kode_prefix", "WCM").single();
+      const { data: lpt } = await a.from("kategori").select("id").eq("nama", "Webcam").single();
       const { data: unit } = await a.rpc("ambil_unit_tersedia", { p_kategori_id: lpt!.id, p_jumlah: 1 });
       const now = Date.now();
       const { data, error } = await a.rpc("buat_peminjaman", {
-        p_nama_peminjam: "Uji HTTP", p_divisi_peminjam: "IT", p_kontak_peminjam: "0812", p_ruangan: "R1",
+        p_nama_peminjam: "Uji HTTP", p_divisi_peminjam: "IT", p_kontak_peminjam: "081234567890", p_ruangan: "R1",
         p_keperluan: "Uji", p_tgl_peminjaman: new Date(now).toISOString(),
         p_tgl_rencana_kembali: new Date(now + 3600_000).toISOString(), p_aset_ids: [unit![0].id],
       });
@@ -122,7 +122,7 @@ async function main() {
       const { asetIds, bersihkan, DATA_PEMINJAM, jadwal, unggahFoto } = await import("./fixtures");
       const a = await signIn(adm.email, adm.password);
       const s = await signIn(sar.email, sar.password);
-      const [prj2, prj3] = await asetIds(a, ["PRJ-002", "PRJ-003"]);
+      const [prj2, prj3] = await asetIds(a, ["TI-LPT-003", "TI-LPT-004"]);
       const { data, error } = await a.rpc("buat_peminjaman", { ...DATA_PEMINJAM, ...jadwal(), p_aset_ids: [prj2] });
       if (error) return error.message;
       const pid = data![0].id;
@@ -146,12 +146,12 @@ async function main() {
         const signedCount = (html.match(/\/storage\/v1\/object\/sign\/foto-peminjaman\/pemasangan\//g) ?? []).length;
         const ok =
           html.includes("Foto Pemasangan") && signedCount >= 2 &&
-          html.includes("Unit PRJ-002 diganti PRJ-003") && html.includes("Lampu mati") &&
+          html.includes("Unit TI-LPT-003 diganti TI-LPT-004") && html.includes("Lampu mati") &&
           html.includes("Pemasangan 1 unit dengan 2 foto");
         const formK = await (await get(`/peminjaman/${pid}/pengembalian`, cs)).text();
         return (ok && formK.includes("Simpan Pengembalian")) || `signed=${signedCount}, ok=${ok}`;
       } finally {
-        await bersihkan([pid], ["PRJ-002", "PRJ-003"]);
+        await bersihkan([pid], ["TI-LPT-003", "TI-LPT-004"]);
       }
     });
     await check("Dashboard: kartu ringkasan & tabel sesuai role, ikon notifikasi", async () => {
@@ -166,7 +166,7 @@ async function main() {
       return html.includes("Akses ditolak") || "tidak 403";
     });
     await check("Detail aset menampilkan riwayat peminjaman", async () => {
-      const { data: u } = await admin.from("aset").select("id").eq("kode_aset", "LPT-001").single();
+      const { data: u } = await admin.from("aset").select("id").eq("kode_aset", "TI-LPT-001").single();
       const r = await get(`/aset/${u!.id}`, cs);
       return (r.status === 200 && (await r.text()).includes("Riwayat Peminjaman")) || `status ${r.status}`;
     });

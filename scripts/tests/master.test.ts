@@ -11,18 +11,18 @@ async function main() {
   try {
     const a = await signIn(adm.email, adm.password);
     const s = await signIn(sar.email, sar.password);
-    const { data: lpt } = await s.from("kategori").select("id").eq("kode_prefix", "LPT").single();
+    const { data: lpt } = await s.from("kategori").select("id").eq("nama", "Laptop").single();
 
-    await check("Kode aset otomatis: LPT berikutnya = LPT-00(n+1)", async () => {
+    await check("Kode aset otomatis: TI-LPT berikutnya = TI-LPT-00(n+1)", async () => {
       const { data: last } = await s
-        .from("aset").select("kode_aset").like("kode_aset", "LPT-%").order("kode_aset", { ascending: false }).limit(1).single();
-      const n = Number(last!.kode_aset.split("-")[1]) + 1;
+        .from("aset").select("kode_aset").like("kode_aset", "TI-LPT-%").order("kode_aset", { ascending: false }).limit(1).single();
+      const n = Number(last!.kode_aset.split("-").pop()) + 1;
       const { data, error } = await s
         .from("aset").insert({ kategori_id: lpt!.id, nama_aset: "Laptop Uji", kondisi: "baik", status: "tersedia" })
         .select("id, kode_aset").single();
       if (error) return error.message;
       cleanupAset.push(data.id);
-      return data.kode_aset === `LPT-${String(n).padStart(3, "0")}` || `dapat ${data.kode_aset}`;
+      return data.kode_aset === `TI-LPT-${String(n).padStart(3, "0")}` || `dapat ${data.kode_aset}`;
     });
 
     await check("Sarpras tidak bisa mengubah status ke 'dipinjam' secara manual", async () => {
@@ -37,8 +37,20 @@ async function main() {
     });
 
     await check("Kode aset tidak dapat diubah", async () => {
-      const { error } = await s.from("aset").update({ kode_aset: "LPT-999" }).eq("id", cleanupAset[0]);
+      const { error } = await s.from("aset").update({ kode_aset: "TI-LPT-999" }).eq("id", cleanupAset[0]);
       return !!error;
+    });
+
+    await check("Prefix bersama: Conf-Cam baru = nomor terbesar TI-CAM + 1 (lintas kategori Webcam)", async () => {
+      const { data: conf } = await s.from("kategori").select("id").eq("nama", "Conf-Cam").single();
+      const { data: semua } = await s.from("aset").select("kode_aset").like("kode_aset", "TI-CAM-%");
+      const maks = Math.max(0, ...semua!.map((x) => Number(x.kode_aset.split("-").pop())));
+      const { data, error } = await s
+        .from("aset").insert({ kategori_id: conf!.id, nama_aset: "ConfCam Uji", kondisi: "baik", status: "tersedia" })
+        .select("id, kode_aset").single();
+      if (error) return error.message;
+      cleanupAset.push(data.id);
+      return data.kode_aset === `TI-CAM-${String(maks + 1).padStart(3, "0")}` || `dapat ${data.kode_aset}`;
     });
 
     await check("Admin (tanpa aset.create) tidak bisa menambah aset", async () => {
@@ -53,7 +65,7 @@ async function main() {
     });
 
     await check("Prefix kategori yang punya aset tidak bisa diubah", async () => {
-      const { error } = await s.from("kategori").update({ kode_prefix: "LTP" }).eq("id", lpt!.id);
+      const { error } = await s.from("kategori").update({ kode_prefix: "TI-LTP" }).eq("id", lpt!.id);
       return error?.message.includes("prefix") || `error: ${error?.message}`;
     });
 

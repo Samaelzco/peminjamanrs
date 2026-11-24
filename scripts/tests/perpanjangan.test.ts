@@ -2,7 +2,7 @@
 import { admin, check, cleanupUser, signIn, summary, tempUser, type Db } from "./helpers";
 import { asetIds, bersihkan, DATA_PEMINJAM, unggahFoto } from "./fixtures";
 
-const ASET_UJI = ["LPT-003", "WCM-002"];
+const ASET_UJI = ["TI-LPT-003", "TI-CAM-002"];
 
 async function pinjamDanPasang(a: Db, s: Db, ids: number[], mulaiJam: number, kembaliJam: number) {
   const now = Date.now();
@@ -121,9 +121,9 @@ async function main() {
     });
 
     await check("Unit pada perpanjangan tetap tidak tersedia untuk dipinjam", async () => {
-      const { data: k } = await a.from("kategori").select("id").eq("kode_prefix", "LPT").single();
+      const { data: k } = await a.from("kategori").select("id").eq("nama", "Laptop").single();
       const { data } = await a.rpc("aset_tersedia", { p_kategori_id: k!.id });
-      return !data!.some((x) => x.kode_aset === "LPT-003") || "LPT-003 muncul";
+      return !data!.some((x) => x.kode_aset === "TI-LPT-003") || "TI-LPT-003 muncul";
     });
 
     await check("Peminjaman lama tidak bisa diperpanjang lagi", async () => {

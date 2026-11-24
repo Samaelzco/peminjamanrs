@@ -2,7 +2,7 @@
 import { admin, check, cleanupUser, signIn, summary, tempUser } from "./helpers";
 import { asetIds, bersihkan, DATA_PEMINJAM, unggahFoto } from "./fixtures";
 
-const ASET = ["WCM-001"];
+const ASET = ["TI-CAM-001"];
 
 async function main() {
   console.log("Uji pg_cron nyata (menunggu jadwal */15 menit)");

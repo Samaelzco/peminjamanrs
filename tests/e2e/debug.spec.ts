@@ -62,8 +62,14 @@ test("Reset sungguhan (RUN_RESET=1)", async ({ page }) => {
   expect(pjm).toBe(0);
   expect(notif).toBe(0);
   expect(aset!.map((a) => `${a.kode_aset}:${a.status}/${a.kondisi}`)).toEqual(
-    ["LPT-001", "LPT-002", "LPT-003", "PRJ-001", "PRJ-002", "PRJ-003", "WCM-001", "WCM-002"].map((k) => `${k}:tersedia/baik`),
+    ["TI-CAM-001", "TI-CAM-002", "TI-LPT-001", "TI-LPT-002", "TI-LPT-003", "TI-LPT-004", "TI-PRJ-001", "TI-PRJ-002"].map(
+      (k) => `${k}:tersedia/baik`,
+    ),
   );
+  const { data: kat } = await db.from("kategori").select("nama, kode_prefix").order("nama");
+  expect(kat!.map((k) => `${k.nama}:${k.kode_prefix}`)).toEqual([
+    "Conf-Cam:TI-CAM", "Laptop:TI-LPT", "Proyektor:TI-PRJ", "Webcam:TI-CAM",
+  ]);
   for (const root of ["pemasangan", "pengembalian"]) {
     const { data } = await db.storage.from("foto-peminjaman").list(root);
     expect(data ?? []).toHaveLength(0);

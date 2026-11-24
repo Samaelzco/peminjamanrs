@@ -2,7 +2,7 @@
 import { admin, check, cleanupUser, signIn, summary, tempUser } from "./helpers";
 import { asetIds, bersihkan, DATA_PEMINJAM, jadwal, unggahFoto } from "./fixtures";
 
-const ASET_UJI = ["LPT-001", "LPT-002", "LPT-003", "PRJ-001", "PRJ-002", "WCM-001"];
+const ASET_UJI = ["TI-LPT-001", "TI-LPT-002", "TI-LPT-003", "TI-PRJ-001", "TI-PRJ-002", "TI-CAM-001"];
 
 async function main() {
   console.log("Uji pemasangan & pengembalian (database + storage)");
@@ -15,7 +15,7 @@ async function main() {
     const s = await signIn(sar.email, sar.password);
     const [lpt1, lpt2, lpt3, prj1, , wcm1] = await asetIds(a, ASET_UJI);
 
-    // Peminjaman: LPT-001, PRJ-001, WCM-001
+    // Peminjaman: TI-LPT-001, TI-PRJ-001, TI-CAM-001
     const { data: buat, error: e0 } = await a.rpc("buat_peminjaman", {
       ...DATA_PEMINJAM, ...jadwal(), p_aset_ids: [lpt1, prj1, wcm1],
     });
@@ -39,7 +39,7 @@ async function main() {
       }
     });
 
-    await check("Ganti unit: LPT-001 gagal dites → diganti LPT-002, LPT-001 jadi dalam_perbaikan", async () => {
+    await check("Ganti unit: TI-LPT-001 gagal dites → diganti TI-LPT-002, TI-LPT-001 jadi dalam_perbaikan", async () => {
       const { error } = await s.rpc("ganti_unit_pemasangan", {
         p_detail_id: dLpt.id, p_aset_baru_id: lpt2, p_alasan: "Tidak menyala saat dites",
       });
@@ -56,7 +56,7 @@ async function main() {
     });
 
     await check("Ganti ke unit kategori lain ditolak", async () => {
-      const { data: prj2 } = await s.from("aset").select("id").eq("kode_aset", "PRJ-002").single();
+      const { data: prj2 } = await s.from("aset").select("id").eq("kode_aset", "TI-PRJ-002").single();
       const { error } = await s.rpc("ganti_unit_pemasangan", { p_detail_id: dLpt.id, p_aset_baru_id: prj2!.id, p_alasan: "x" });
       return !!error?.message.includes("kategori");
     });
@@ -155,11 +155,11 @@ async function main() {
 
     await check("S8: notifikasi unit rusak/hilang ke user peminjaman.view", async () => {
       const { data } = await a.from("notifikasi").select("pesan").eq("peminjaman_id", pid).like("pesan", "Pengembalian%");
-      return (data?.length === 1 && data[0].pesan.includes("PRJ-001 rusak") && data[0].pesan.includes("WCM-001 hilang")) ||
+      return (data?.length === 1 && data[0].pesan.includes("TI-PRJ-001 rusak") && data[0].pesan.includes("TI-CAM-001 hilang")) ||
         JSON.stringify(data);
     });
 
-    await check("S9: aset yang kembali tersedia (LPT-002) bisa dipinjam lagi; riwayat lama tetap ada", async () => {
+    await check("S9: aset yang kembali tersedia (TI-LPT-002) bisa dipinjam lagi; riwayat lama tetap ada", async () => {
       const { data, error } = await a.rpc("buat_peminjaman", { ...DATA_PEMINJAM, ...jadwal(), p_aset_ids: [lpt2] });
       if (error) return error.message;
       dibuat.push(data![0].id);

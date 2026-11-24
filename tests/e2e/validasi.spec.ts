@@ -63,12 +63,12 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
   await test.step("T2: Ganti membuka modal (bukan dropdown di dalam tabel)", async () => {
     await page.locator("#kategori").selectOption({ label: "Laptop" });
     await page.getByRole("button", { name: "Tambah Unit" }).click();
-    const row = page.locator("table tbody tr").filter({ hasText: /LPT-\d{3}/ }).first();
+    const row = page.locator("table tbody tr").filter({ hasText: /TI-LPT-\d{3}/ }).first();
     await expect(row).toBeVisible();
     await row.getByRole("button", { name: "Ganti" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText(/Ganti Unit LPT-/)).toBeVisible();
+    await expect(dialog.getByText(/Ganti Unit TI-LPT-/)).toBeVisible();
     await page.screenshot({ path: "tests/screenshots/T2-modal-ganti.png", fullPage: true });
     await dialog.getByRole("button", { name: "Batal" }).click();
     await expect(dialog).toBeHidden();
@@ -106,7 +106,7 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
 
 test("Lapis database: CHECK constraint menolak kontak berhuruf & teks kepanjangan (API langsung)", async () => {
   const api = await apiSebagai(AKUN.admin.email, AKUN.admin.password);
-  const { data: lpt3 } = await db.from("aset").select("id").eq("kode_aset", "LPT-003").single();
+  const { data: lpt3 } = await db.from("aset").select("id").eq("kode_aset", "TI-LPT-003").single();
   const dasar = {
     p_nama_peminjam: "Uji", p_divisi_peminjam: "IT", p_ruangan: "R1", p_keperluan: "Uji",
     p_tgl_peminjaman: new Date().toISOString(), p_tgl_rencana_kembali: new Date(Date.now() + JAM).toISOString(),

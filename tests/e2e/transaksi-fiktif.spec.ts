@@ -1,7 +1,13 @@
 /**
  * Pengujian 5 transaksi fiktif lewat UI (Admin & Sarpras) + verifikasi database.
  * Jalankan: npm run build && npx playwright test
- * Prasyarat: kondisi awal sesuai prompt (8 aset tersedia/baik, belum ada peminjaman).
+ * Prasyarat: kondisi awal = data demo (npm run seed:demo / reset di /debug): 8 aset TI-* tersedia/baik,
+ * belum ada peminjaman.
+ *
+ * Penyesuaian terhadap prompt-pengujian-5-transaksi.md karena data demo baru
+ * (4 laptop, 2 proyektor, 1 webcam, 1 conf-cam):
+ *  - TRX-002 meminjam Conf-Cam (TI-CAM-002), karena satu-satunya Webcam (TI-CAM-001) hilang di TRX-004.
+ *  - TRX-005: Proyektor 2 → ditolak ("hanya tersedia 1"), lalu Proyektor 1 + Laptop 1.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -56,7 +62,7 @@ async function bukaFormBaru(page: Page, label: Label, keluar = witaInput(0), kem
 
 async function kodeDraft(page: Page) {
   const cells = await page.locator("table tbody tr td:first-child").allTextContents();
-  return cells.map((c) => c.trim()).filter((c) => /^[A-Z]{2,5}-\d{3,}$/.test(c));
+  return cells.map((c) => c.trim()).filter((c) => /^[A-Z]{2,5}(-[A-Z]{2,5}){0,2}-\d{3,}$/.test(c));
 }
 
 /** Klik + Tambah Unit; kembalikan pesan error (kalau ada) dan kode di tabel. */
@@ -175,40 +181,40 @@ test("0. Kondisi awal", async () => {
 test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
   await bukaFormBaru(admin, "TRX-004");
 
-  await cek(admin, "1.1", "Laptop 1 + Webcam 1 → LPT-001 dan WCM-001", async () => {
+  await cek(admin, "1.1", "Laptop 1 + Webcam 1 → TI-LPT-001 dan TI-CAM-001", async () => {
     await tambahUnit(admin, "Laptop", 1);
     const r = await tambahUnit(admin, "Webcam", 1);
     assert(!r.error, r.error ?? "");
-    assert(JSON.stringify(r.kode) === '["LPT-001","WCM-001"]', `dipilih ${r.kode.join(", ")}`);
+    assert(JSON.stringify(r.kode) === '["TI-LPT-001","TI-CAM-001"]', `dipilih ${r.kode.join(", ")}`);
     await shot(admin, "1.1-unit-otomatis");
     return `Dipilih ${r.kode.join(", ")}`;
   });
 
-  await cek(admin, "1.2", "Ganti LPT-001: dropdown hanya LPT-002, LPT-003; pilih LPT-002", async () => {
-    await admin.locator("table tbody tr", { hasText: "LPT-001" }).getByRole("button", { name: "Ganti" }).click();
-    const select = admin.getByLabel("Ganti LPT-001");
+  await cek(admin, "1.2", "Ganti TI-LPT-001: dropdown hanya TI-LPT-002..004; pilih TI-LPT-002", async () => {
+    await admin.locator("table tbody tr", { hasText: "TI-LPT-001" }).getByRole("button", { name: "Ganti" }).click();
+    const select = admin.getByLabel("Ganti TI-LPT-001");
     await expect(select).toBeVisible();
     await expect(select.locator("option")).not.toHaveCount(1);
     const opsi = (await select.locator("option").allTextContents()).filter((o) => !o.startsWith("Pilih"));
     const kodeOpsi = opsi.map((o) => o.split(" ")[0]);
     await shot(admin, "1.2-dropdown-ganti");
-    assert(JSON.stringify(kodeOpsi) === '["LPT-002","LPT-003"]', `opsi: ${kodeOpsi.join(", ")}`);
-    const value = await select.locator("option", { hasText: "LPT-002" }).getAttribute("value");
+    assert(JSON.stringify(kodeOpsi) === '["TI-LPT-002","TI-LPT-003","TI-LPT-004"]', `opsi: ${kodeOpsi.join(", ")}`);
+    const value = await select.locator("option", { hasText: "TI-LPT-002" }).getAttribute("value");
     await select.selectOption(value!);
     await admin.getByRole("button", { name: "Ganti Unit" }).click();
     await expect(select).toBeHidden();
     const kode = await kodeDraft(admin);
-    assert(JSON.stringify(kode) === '["LPT-002","WCM-001"]', `tabel: ${kode.join(", ")}`);
+    assert(JSON.stringify(kode) === '["TI-LPT-002","TI-CAM-001"]', `tabel: ${kode.join(", ")}`);
     return `Opsi ${kodeOpsi.join(", ")}; tabel sekarang ${kode.join(", ")}`;
   });
 
-  await cek(admin, "1.3", "Simpan → diajukan; LPT-002 & WCM-001 tetap tersedia tapi terkunci; Sarpras dapat notifikasi", async () => {
+  await cek(admin, "1.3", "Simpan → diajukan; TI-LPT-002 & TI-CAM-001 tetap tersedia tapi terkunci; Sarpras dapat notifikasi", async () => {
     const { id, kode } = await simpanPeminjaman(admin, "TRX-004");
     const st = await statusPeminjaman(id);
     const a = await asetMap();
     const api = await apiSebagai(AKUN.admin.email, AKUN.admin.password);
-    const { data: lpt } = await db.from("kategori").select("id").eq("kode_prefix", "LPT").single();
-    const { data: wcm } = await db.from("kategori").select("id").eq("kode_prefix", "WCM").single();
+    const { data: lpt } = await db.from("kategori").select("id").eq("nama", "Laptop").single();
+    const { data: wcm } = await db.from("kategori").select("id").eq("nama", "Webcam").single();
     const tl = (await api.rpc("aset_tersedia", { p_kategori_id: lpt!.id })).data!.map((x) => x.kode_aset);
     const tw = (await api.rpc("aset_tersedia", { p_kategori_id: wcm!.id })).data!.map((x) => x.kode_aset);
     const sid = await staffId(AKUN.sarpras.email);
@@ -217,30 +223,30 @@ test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
     const bell = await sarpras.getByRole("button", { name: /Notifikasi, \d+ belum dibaca/ }).getAttribute("aria-label");
     await shot(sarpras, "1.3-notifikasi-sarpras");
     assert(st === "diajukan", `status ${st}`);
-    assert(a["LPT-002"].status === "tersedia" && a["WCM-001"].status === "tersedia", "status aset berubah");
-    assert(!tl.includes("LPT-002") && !tw.includes("WCM-001"), `masih bisa dipilih: ${tl}, ${tw}`);
+    assert(a["TI-LPT-002"].status === "tersedia" && a["TI-CAM-001"].status === "tersedia", "status aset berubah");
+    assert(!tl.includes("TI-LPT-002") && !tw.includes("TI-CAM-001"), `masih bisa dipilih: ${tl}, ${tw}`);
     assert(notif?.length === 1, `notifikasi sarpras: ${notif?.length}`);
-    return `${kode} diajukan; aset tersedia tapi tidak muncul di pilihan (sisa laptop: ${tl.join(", ")}; webcam: ${tw.join(", ")}); notifikasi Sarpras: "${notif![0].pesan}" (${bell})`;
+    return `${kode} diajukan; aset tersedia tapi tidak muncul di pilihan (sisa laptop: ${tl.join(", ")}; webcam: ${tw.join(", ") || "-"}); notifikasi Sarpras: "${notif![0].pesan}" (${bell})`;
   });
 
   const id = pemetaan["TRX-004"]?.id;
   test.skip(!id, "TRX-004 gagal dibuat");
 
-  await cek(sarpras, "1.4", "Pemasangan 2 foto → dipinjam; LPT-002 & WCM-001 dipinjam; 1 pemasangan + 2 foto", async () => {
+  await cek(sarpras, "1.4", "Pemasangan 2 foto → dipinjam; TI-LPT-002 & TI-CAM-001 dipinjam; 1 pemasangan + 2 foto", async () => {
     await pemasangan(sarpras, id, 2);
     await shot(sarpras, "1.4-detail-setelah-pemasangan");
     const st = await statusPeminjaman(id);
     const a = await asetMap();
     const { data: ps } = await db.from("pemasangan").select("id, foto_pemasangan(id)").eq("peminjaman_id", id);
     assert(st === "dipinjam", `status ${st}`);
-    assert(a["LPT-002"].status === "dipinjam" && a["WCM-001"].status === "dipinjam", "aset belum dipinjam");
+    assert(a["TI-LPT-002"].status === "dipinjam" && a["TI-CAM-001"].status === "dipinjam", "aset belum dipinjam");
     assert(ps?.length === 1 && ps[0].foto_pemasangan.length === 2, `pemasangan ${ps?.length}, foto ${ps?.[0]?.foto_pemasangan.length}`);
-    return "Status dipinjam; LPT-002 & WCM-001 dipinjam; 1 pemasangan, 2 foto";
+    return "Status dipinjam; TI-LPT-002 & TI-CAM-001 dipinjam; 1 pemasangan, 2 foto";
   });
 
   await cek(sarpras, "1.6", "Pengembalian Rusak tanpa catatan → ditolak (catatan wajib)", async () => {
     await sarpras.goto(`/peminjaman/${id}/pengembalian`);
-    await isiPengembalian(sarpras, { "LPT-002": { k: "rusak", catatan: "" }, "WCM-001": { k: "hilang", catatan: "Tidak ditemukan di ruangan" } });
+    await isiPengembalian(sarpras, { "TI-LPT-002": { k: "rusak", catatan: "" }, "TI-CAM-001": { k: "hilang", catatan: "Tidak ditemukan di ruangan" } });
     await pilihFoto(sarpras, foto.slice(0, 3));
     await sarpras.getByRole("button", { name: "Simpan Pengembalian" }).click();
     const msg = sarpras.getByRole("alert").filter({ hasText: /catatan/i });
@@ -262,8 +268,8 @@ test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
     return `UI: "${teks}". RPC langsung: "${error!.message}". Tidak ada pengembalian tersimpan.`;
   });
 
-  await cek(sarpras, "1.5", "Pengembalian LPT-002 Rusak, WCM-001 Hilang, 3 foto → selesai; LPT-002 dalam_perbaikan/rusak; WCM-001 hilang; notifikasi Admin", async () => {
-    await sarpras.getByLabel("Catatan LPT-002").fill("Engsel layar longgar");
+  await cek(sarpras, "1.5", "Pengembalian TI-LPT-002 Rusak, TI-CAM-001 Hilang, 3 foto → selesai; TI-LPT-002 dalam_perbaikan/rusak; TI-CAM-001 hilang; notifikasi Admin", async () => {
+    await sarpras.getByLabel("Catatan TI-LPT-002").fill("Engsel layar longgar");
     await simpanPengembalian(sarpras, id);
     await shot(sarpras, "1.5-detail-setelah-pengembalian");
     const st = await statusPeminjaman(id);
@@ -272,20 +278,20 @@ test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
     const { data: n } = await db.from("notifikasi").select("pesan").eq("peminjaman_id", id).eq("user_id", aid);
     const { data: pk } = await db.from("pengembalian").select("id, foto_pengembalian(id)").eq("peminjaman_id", id);
     assert(st === "selesai", `status ${st}`);
-    assert(a["LPT-002"].status === "dalam_perbaikan" && a["LPT-002"].kondisi === "rusak", `LPT-002 ${a["LPT-002"].status}/${a["LPT-002"].kondisi}`);
-    assert(a["WCM-001"].status === "hilang", `WCM-001 ${a["WCM-001"].status}`);
+    assert(a["TI-LPT-002"].status === "dalam_perbaikan" && a["TI-LPT-002"].kondisi === "rusak", `TI-LPT-002 ${a["TI-LPT-002"].status}/${a["TI-LPT-002"].kondisi}`);
+    assert(a["TI-CAM-001"].status === "hilang", `TI-CAM-001 ${a["TI-CAM-001"].status}`);
     assert(pk?.[0]?.foto_pengembalian.length === 3, `foto ${pk?.[0]?.foto_pengembalian.length}`);
-    assert(n?.some((x) => x.pesan.includes("LPT-002 rusak") && x.pesan.includes("WCM-001 hilang")), `notif admin: ${JSON.stringify(n)}`);
-    return `Selesai; LPT-002 dalam_perbaikan/rusak; WCM-001 hilang; 3 foto; notifikasi Admin: "${n!.find((x) => x.pesan.startsWith("Pengembalian"))!.pesan}"`;
+    assert(n?.some((x) => x.pesan.includes("TI-LPT-002 rusak") && x.pesan.includes("TI-CAM-001 hilang")), `notif admin: ${JSON.stringify(n)}`);
+    return `Selesai; TI-LPT-002 dalam_perbaikan/rusak; TI-CAM-001 hilang; 3 foto; notifikasi Admin: "${n!.find((x) => x.pesan.startsWith("Pengembalian"))!.pesan}"`;
   });
 });
 
 test("Langkah 2 – TRX-001: peminjaman normal", async () => {
   await bukaFormBaru(admin, "TRX-001");
-  await cek(admin, "2.1", "Laptop 1 + Proyektor 1 → LPT-001 dan PRJ-001", async () => {
+  await cek(admin, "2.1", "Laptop 1 + Proyektor 1 → TI-LPT-001 dan TI-PRJ-001", async () => {
     await tambahUnit(admin, "Laptop", 1);
     const r = await tambahUnit(admin, "Proyektor", 1);
-    assert(JSON.stringify(r.kode) === '["LPT-001","PRJ-001"]', `dipilih ${r.kode.join(", ")}`);
+    assert(JSON.stringify(r.kode) === '["TI-LPT-001","TI-PRJ-001"]', `dipilih ${r.kode.join(", ")}`);
     return `Dipilih ${r.kode.join(", ")}`;
   });
   await cek(admin, "2.2", "Simpan → diajukan", async () => {
@@ -297,33 +303,33 @@ test("Langkah 2 – TRX-001: peminjaman normal", async () => {
   const id = pemetaan["TRX-001"]?.id;
   test.skip(!id, "TRX-001 gagal dibuat");
 
-  await cek(sarpras, "2.3", "Pemasangan 2 foto → dipinjam; LPT-001 & PRJ-001 dipinjam", async () => {
+  await cek(sarpras, "2.3", "Pemasangan 2 foto → dipinjam; TI-LPT-001 & TI-PRJ-001 dipinjam", async () => {
     await pemasangan(sarpras, id, 2);
     const st = await statusPeminjaman(id);
     const a = await asetMap();
-    assert(st === "dipinjam" && a["LPT-001"].status === "dipinjam" && a["PRJ-001"].status === "dipinjam", `status ${st}`);
-    return "Dipinjam; LPT-001 & PRJ-001 dipinjam";
+    assert(st === "dipinjam" && a["TI-LPT-001"].status === "dipinjam" && a["TI-PRJ-001"].status === "dipinjam", `status ${st}`);
+    return "Dipinjam; TI-LPT-001 & TI-PRJ-001 dipinjam";
   });
-  await cek(sarpras, "2.4", "Pengembalian baik semua, 2 foto → selesai; LPT-001 & PRJ-001 tersedia/baik", async () => {
+  await cek(sarpras, "2.4", "Pengembalian baik semua, 2 foto → selesai; TI-LPT-001 & TI-PRJ-001 tersedia/baik", async () => {
     await sarpras.goto(`/peminjaman/${id}/pengembalian`);
-    await isiPengembalian(sarpras, { "LPT-001": { k: "baik" }, "PRJ-001": { k: "baik" } });
+    await isiPengembalian(sarpras, { "TI-LPT-001": { k: "baik" }, "TI-PRJ-001": { k: "baik" } });
     await pilihFoto(sarpras, foto.slice(2, 4));
     await simpanPengembalian(sarpras, id);
     const st = await statusPeminjaman(id);
     const a = await asetMap();
     assert(st === "selesai", `status ${st}`);
-    for (const k of ["LPT-001", "PRJ-001"]) assert(a[k].status === "tersedia" && a[k].kondisi === "baik", `${k} ${a[k].status}/${a[k].kondisi}`);
-    return "Selesai; LPT-001 & PRJ-001 tersedia/baik";
+    for (const k of ["TI-LPT-001", "TI-PRJ-001"]) assert(a[k].status === "tersedia" && a[k].kondisi === "baik", `${k} ${a[k].status}/${a[k].kondisi}`);
+    return "Selesai; TI-LPT-001 & TI-PRJ-001 tersedia/baik";
   });
 });
 
 test("Langkah 3 – TRX-002: terlambat", async () => {
   // Tanggal keluar 3 jam lalu supaya rencana kembali bisa dimundurkan ke 1 jam lalu (constraint kembali > keluar).
   await bukaFormBaru(admin, "TRX-002", witaInput(-3 * JAM), witaInput(5 * JAM));
-  await cek(admin, "3.1", "Proyektor 1 + Webcam 1 → PRJ-001 dan WCM-002", async () => {
+  await cek(admin, "3.1", "Proyektor 1 + Conf-Cam 1 → TI-PRJ-001 dan TI-CAM-002 (Webcam habis: TI-CAM-001 hilang)", async () => {
     await tambahUnit(admin, "Proyektor", 1);
-    const r = await tambahUnit(admin, "Webcam", 1);
-    assert(JSON.stringify(r.kode) === '["PRJ-001","WCM-002"]', `dipilih ${r.kode.join(", ")}`);
+    const r = await tambahUnit(admin, "Conf-Cam", 1);
+    assert(JSON.stringify(r.kode) === '["TI-PRJ-001","TI-CAM-002"]', `dipilih ${r.kode.join(", ")}`);
     return `Dipilih ${r.kode.join(", ")}`;
   });
   await cek(admin, "3.2", "Simpan → diajukan", async () => {
@@ -408,7 +414,7 @@ test("Langkah 4 – TRX-003: perpanjangan dari TRX-002", async () => {
     assert(b!.perpanjangan_dari === lama.id, `perpanjangan_dari ${b!.perpanjangan_dari}`);
     const { data: l } = await db.from("peminjaman").select("kontak_peminjam").eq("id", lama.id).single();
     assert(b!.nama_peminjam === p.nama && b!.ruangan === p.ruangan && b!.divisi_peminjam === p.divisi && b!.kontak_peminjam === l!.kontak_peminjam, "data peminjam berbeda");
-    assert(JSON.stringify(unit) === '["PRJ-001:baik","WCM-002:baik"]', `unit ${unit}`);
+    assert(JSON.stringify(unit) === '["TI-CAM-002:baik","TI-PRJ-001:baik"]', `unit ${unit}`);
     return `${pemetaan["TRX-003"].kode}: perpanjangan_dari=${lama.kode}, peminjam & ruangan sama, unit ${unit.join(", ")}, keperluan "${b!.keperluan.replace(/\n/g, " ")}"`;
   });
 
@@ -424,10 +430,10 @@ test("Langkah 4 – TRX-003: perpanjangan dari TRX-002", async () => {
     return `TRX-002 selesai (0 pengembalian); TRX-003 dipinjam (0 pemasangan)`;
   });
 
-  await cek(null, "4.3", "PRJ-001 & WCM-002 tetap dipinjam", async () => {
+  await cek(null, "4.3", "TI-PRJ-001 & TI-CAM-002 tetap dipinjam", async () => {
     const a = await asetMap();
-    assert(a["PRJ-001"].status === "dipinjam" && a["WCM-002"].status === "dipinjam", `${a["PRJ-001"].status}, ${a["WCM-002"].status}`);
-    return "PRJ-001 dipinjam, WCM-002 dipinjam";
+    assert(a["TI-PRJ-001"].status === "dipinjam" && a["TI-CAM-002"].status === "dipinjam", `${a["TI-PRJ-001"].status}, ${a["TI-CAM-002"].status}`);
+    return "TI-PRJ-001 dipinjam, TI-CAM-002 dipinjam";
   });
 
   await cek(admin, "4.4", "Detail TRX-002 dan TRX-003 saling terhubung", async () => {
@@ -446,19 +452,19 @@ test("Langkah 4 – TRX-003: perpanjangan dari TRX-002", async () => {
 test("Langkah 5 – TRX-005: permintaan melebihi stok", async () => {
   await bukaFormBaru(admin, "TRX-005");
 
-  await cek(admin, "5.1", "Proyektor 3 → ditolak semua, 'hanya tersedia 2 unit Proyektor', tabel kosong", async () => {
-    const r = await tambahUnit(admin, "Proyektor", 3);
+  await cek(admin, "5.1", "Proyektor 2 → ditolak semua, 'hanya tersedia 1 unit Proyektor', tabel kosong", async () => {
+    const r = await tambahUnit(admin, "Proyektor", 2);
     await shot(admin, "5.1-melebihi-stok");
-    assert(r.error?.includes("Hanya tersedia 2 unit Proyektor"), `pesan: ${r.error}`);
+    assert(r.error?.includes("Hanya tersedia 1 unit Proyektor"), `pesan: ${r.error}`);
     assert(r.kode.length === 0, `tabel berisi ${r.kode.join(", ")}`);
     return `Pesan: "${r.error}"; tabel kosong`;
   });
 
-  await cek(admin, "5.2", "Proyektor 2 + Laptop 1 → PRJ-002, PRJ-003, LPT-001", async () => {
+  await cek(admin, "5.2", "Proyektor 1 + Laptop 1 → TI-PRJ-002, TI-LPT-001", async () => {
     await admin.getByRole("alert").filter({ hasText: /tersedia/ }).getByRole("button").click().catch(() => {});
-    await tambahUnit(admin, "Proyektor", 2);
+    await tambahUnit(admin, "Proyektor", 1);
     const r = await tambahUnit(admin, "Laptop", 1);
-    assert(JSON.stringify(r.kode) === '["PRJ-002","PRJ-003","LPT-001"]', `dipilih ${r.kode.join(", ")}`);
+    assert(JSON.stringify(r.kode) === '["TI-PRJ-002","TI-LPT-001"]', `dipilih ${r.kode.join(", ")}`);
     return `Dipilih ${r.kode.join(", ")}`;
   });
 
@@ -483,13 +489,13 @@ test("Langkah 5 – TRX-005: permintaan melebihi stok", async () => {
     }
   });
 
-  await cek(admin, "5.5", "Riwayat aset LPT-001 menampilkan TRX-001 dan TRX-005", async () => {
+  await cek(admin, "5.5", "Riwayat aset TI-LPT-001 menampilkan TRX-001 dan TRX-005", async () => {
     const a = await asetMap();
-    await admin.goto(`/aset/${a["LPT-001"].id}`);
+    await admin.goto(`/aset/${a["TI-LPT-001"].id}`);
     await expect(admin.getByRole("link", { name: pemetaan["TRX-001"].kode })).toBeVisible();
     await expect(admin.getByRole("link", { name: pemetaan["TRX-005"].kode })).toBeVisible();
     await shot(admin, "5.5-riwayat-lpt001");
-    return `Riwayat LPT-001 berisi ${pemetaan["TRX-001"].kode} (selesai) dan ${pemetaan["TRX-005"].kode} (diajukan)`;
+    return `Riwayat TI-LPT-001 berisi ${pemetaan["TRX-001"].kode} (selesai) dan ${pemetaan["TRX-005"].kode} (diajukan)`;
   });
 });
 
@@ -520,9 +526,10 @@ test("Pemeriksaan akhir", async () => {
 
   await cek(null, "A.2", "Status & kondisi aset sesuai tabel bagian 4", async () => {
     const harap: Record<string, [string, string | null]> = {
-      "LPT-001": ["tersedia", "baik"], "LPT-002": ["dalam_perbaikan", "rusak"], "LPT-003": ["tersedia", "baik"],
-      "PRJ-001": ["dipinjam", "baik"], "PRJ-002": ["tersedia", "baik"], "PRJ-003": ["tersedia", "baik"],
-      "WCM-001": ["hilang", null], "WCM-002": ["dipinjam", "baik"],
+      "TI-LPT-001": ["tersedia", "baik"], "TI-LPT-002": ["dalam_perbaikan", "rusak"],
+      "TI-LPT-003": ["tersedia", "baik"], "TI-LPT-004": ["tersedia", "baik"],
+      "TI-PRJ-001": ["dipinjam", "baik"], "TI-PRJ-002": ["tersedia", "baik"],
+      "TI-CAM-001": ["hilang", null], "TI-CAM-002": ["dipinjam", "baik"],
     };
     const a = await asetMap();
     const beda = Object.entries(harap).filter(([k, [s, kd]]) => a[k].status !== s || (kd !== null && a[k].kondisi !== kd));
@@ -530,12 +537,12 @@ test("Pemeriksaan akhir", async () => {
     return Object.keys(harap).map((k) => `${k}=${a[k].status}/${a[k].kondisi}`).join(", ");
   });
 
-  await cek(null, "A.3", "Unit terkunci TRX-005 (LPT-001, PRJ-002, PRJ-003) tidak bisa dipilih", async () => {
+  await cek(null, "A.3", "Unit terkunci TRX-005 (TI-LPT-001, TI-PRJ-002) tidak bisa dipilih", async () => {
     const api = await apiSebagai(AKUN.admin.email, AKUN.admin.password);
     const { data: kat } = await db.from("kategori").select("id, kode_prefix");
     const tersedia: string[] = [];
     for (const k of kat!) tersedia.push(...((await api.rpc("aset_tersedia", { p_kategori_id: k.id })).data ?? []).map((x) => x.kode_aset));
-    assert(JSON.stringify(tersedia.sort()) === '["LPT-003"]', `tersedia: ${tersedia.join(", ")}`);
+    assert(JSON.stringify(tersedia.sort()) === '["TI-LPT-003","TI-LPT-004"]', `tersedia: ${tersedia.join(", ")}`);
     return `Yang masih bisa dipilih hanya: ${tersedia.join(", ")}`;
   });
 
@@ -548,16 +555,16 @@ test("Pemeriksaan akhir", async () => {
     await admin.waitForURL(/q=Sari/);
     await expect(admin.getByText("dari 1 peminjaman")).toBeVisible();
     await expect(admin.getByRole("link", { name: p["TRX-004"].kode })).toBeVisible();
-    await admin.locator("#q").fill("PRJ-001");
+    await admin.locator("#q").fill("TI-PRJ-001");
     await admin.getByRole("button", { name: "Terapkan" }).click();
-    await admin.waitForURL(/q=PRJ-001/);
+    await admin.waitForURL(/q=TI-PRJ-001/);
     await expect(admin.getByText("dari 3 peminjaman")).toBeVisible();
     for (const l of ["TRX-001", "TRX-002", "TRX-003"]) await expect(admin.getByRole("link", { name: p[l].kode })).toBeVisible();
     await shot(admin, "A.4-riwayat-cari-prj001");
-    return `5 transaksi tampil; "Sari Wulandari" → ${p["TRX-004"].kode}; "PRJ-001" → ${["TRX-001", "TRX-002", "TRX-003"].map((l) => p[l].kode).join(", ")}`;
+    return `5 transaksi tampil; "Sari Wulandari" → ${p["TRX-004"].kode}; "TI-PRJ-001" → ${["TRX-001", "TRX-002", "TRX-003"].map((l) => p[l].kode).join(", ")}`;
   });
 
-  await cek(admin, "A.5", "Dashboard Admin & Sarpras: Diajukan 1, Dipinjam 1, Terlambat 0, Aset Tersedia 1", async () => {
+  await cek(admin, "A.5", "Dashboard Admin & Sarpras: Diajukan 1, Dipinjam 1, Terlambat 0, Aset Tersedia 2", async () => {
     const angka = async (page: Page) => {
       await page.goto("/");
       return Promise.all(["Diajukan", "Dipinjam", "Terlambat", "Aset Tersedia"].map((l) => kartuDashboard(page, l)));
@@ -566,7 +573,7 @@ test("Pemeriksaan akhir", async () => {
     const s = await angka(sarpras);
     await shot(admin, "A.5-dashboard-admin");
     await shot(sarpras, "A.5-dashboard-sarpras");
-    const harap = "[1,1,0,1]";
+    const harap = "[1,1,0,2]";
     assert(JSON.stringify(a) === harap && JSON.stringify(s) === harap, `admin ${a}, sarpras ${s}`);
     const menunggu = sarpras.locator("section", { has: sarpras.getByRole("heading", { name: /^Menunggu Pemasangan/ }) });
     await expect(menunggu.getByRole("link", { name: p["TRX-005"].kode })).toBeVisible();
@@ -591,7 +598,7 @@ test("Pemeriksaan akhir", async () => {
     if (await sarpras.getByRole("button", { name: "Batalkan" }).count()) temuan.push("tombol Batalkan tampil");
 
     const api = await apiSebagai(AKUN.sarpras.email, AKUN.sarpras.password);
-    const { data: lpt3 } = await db.from("aset").select("id").eq("kode_aset", "LPT-003").single();
+    const { data: lpt3 } = await db.from("aset").select("id").eq("kode_aset", "TI-LPT-003").single();
     const r1 = await api.rpc("buat_peminjaman", {
       p_nama_peminjam: "X", p_divisi_peminjam: "X", p_kontak_peminjam: "0", p_ruangan: "X", p_keperluan: "X",
       p_tgl_peminjaman: new Date().toISOString(), p_tgl_rencana_kembali: new Date(Date.now() + JAM).toISOString(), p_aset_ids: [lpt3!.id],
