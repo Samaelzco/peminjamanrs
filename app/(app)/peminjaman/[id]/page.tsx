@@ -17,6 +17,7 @@ import { requirePermission } from "@/lib/auth";
 import { formatWita, menitSejak } from "@/lib/datetime";
 import { KONDISI, STATUS_PEMINJAMAN } from "@/lib/labels";
 import { getPeminjaman } from "@/lib/peminjaman";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { AksiPeminjaman } from "./aksi-peminjaman";
 import { Timeline } from "./timeline";
 
@@ -137,7 +138,34 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
             </div>
           </Card>
 
-          {/* Foto pemasangan / pengembalian ditambahkan pada Fase 5 */}
+          {(p.pemasangan || p.pengembalian) && (
+            <div className="grid gap-6 lg:grid-cols-2">
+              {p.pemasangan && (
+                <Card>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Foto Pemasangan</h2>
+                    <p className="text-xs text-gray-500">
+                      {formatWita(p.pemasangan.tgl)}
+                      {p.pemasangan.staffNama && ` · ${p.pemasangan.staffNama}`}
+                    </p>
+                  </div>
+                  <PhotoGallery title={`Foto pemasangan ${p.kode}`} photos={p.pemasangan.foto} />
+                </Card>
+              )}
+              {p.pengembalian && (
+                <Card>
+                  <div>
+                    <h2 className="text-base font-semibold text-gray-900">Foto Pengembalian</h2>
+                    <p className="text-xs text-gray-500">
+                      {formatWita(p.pengembalian.tgl)}
+                      {p.pengembalian.staffNama && ` · ${p.pengembalian.staffNama}`}
+                    </p>
+                  </div>
+                  <PhotoGallery title={`Foto pengembalian ${p.kode}`} photos={p.pengembalian.foto} />
+                </Card>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
@@ -170,7 +198,7 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
 
           <Card>
             <h2 className="text-base font-semibold text-gray-900">Timeline</h2>
-            <Timeline log={p.log} />
+            <Timeline events={p.timeline} />
           </Card>
         </div>
       </div>

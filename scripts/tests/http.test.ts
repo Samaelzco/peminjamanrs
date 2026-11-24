@@ -117,6 +117,43 @@ async function main() {
         await admin.from("peminjaman").delete().eq("id", id);
       }
     });
+    await check("Pemasangan/Pengembalian: halaman, foto (signed URL), timeline penggantian", async () => {
+      const { signIn } = await import("./helpers");
+      const { asetIds, bersihkan, DATA_PEMINJAM, jadwal, unggahFoto } = await import("./fixtures");
+      const a = await signIn(adm.email, adm.password);
+      const s = await signIn(sar.email, sar.password);
+      const [prj2, prj3] = await asetIds(a, ["PRJ-002", "PRJ-003"]);
+      const { data, error } = await a.rpc("buat_peminjaman", { ...DATA_PEMINJAM, ...jadwal(), p_aset_ids: [prj2] });
+      if (error) return error.message;
+      const pid = data![0].id;
+      try {
+        const formA = await get(`/peminjaman/${pid}/pemasangan`, ca);
+        const formS = await (await get(`/peminjaman/${pid}/pemasangan`, cs)).text();
+        if (!(await formA.text()).includes("Akses ditolak")) return "admin bisa buka form pemasangan";
+        if (!formS.includes("Simpan Pemasangan") || !formS.includes('capture="environment"')) return "form pemasangan tidak sesuai";
+
+        const { data: det } = await s.from("detail_peminjaman").select("id").eq("peminjaman_id", pid).single();
+        const g = await s.rpc("ganti_unit_pemasangan", { p_detail_id: det!.id, p_aset_baru_id: prj3, p_alasan: "Lampu mati" });
+        if (g.error) return g.error.message;
+        const { data: rid } = await s.rpc("reservasi_id_kejadian", { p_jenis: "pemasangan", p_peminjaman_id: pid });
+        const foto = await unggahFoto(s, "pemasangan", rid!, 2);
+        const sp = await s.rpc("simpan_pemasangan", {
+          p_peminjaman_id: pid, p_pemasangan_id: rid!, p_units: [{ detail_id: det!.id, kondisi_keluar: "baik" }], p_foto: foto,
+        });
+        if (sp.error) return sp.error.message;
+
+        const html = await (await get(`/peminjaman/${pid}`, ca)).text();
+        const signedCount = (html.match(/\/storage\/v1\/object\/sign\/foto-peminjaman\/pemasangan\//g) ?? []).length;
+        const ok =
+          html.includes("Foto Pemasangan") && signedCount >= 2 &&
+          html.includes("Unit PRJ-002 diganti PRJ-003") && html.includes("Lampu mati") &&
+          html.includes("Pemasangan 1 unit dengan 2 foto");
+        const formK = await (await get(`/peminjaman/${pid}/pengembalian`, cs)).text();
+        return (ok && formK.includes("Simpan Pengembalian")) || `signed=${signedCount}, ok=${ok}`;
+      } finally {
+        await bersihkan([pid], ["PRJ-002", "PRJ-003"]);
+      }
+    });
     await check("Detail aset menampilkan riwayat peminjaman", async () => {
       const { data: u } = await admin.from("aset").select("id").eq("kode_aset", "LPT-001").single();
       const r = await get(`/aset/${u!.id}`, cs);

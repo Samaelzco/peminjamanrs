@@ -55,6 +55,46 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"foto_pemasangan": {
+                  Row: {
+                    "created_at": string,"id": number,"path_foto": string,"pemasangan_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"path_foto": string,"pemasangan_id": number
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"path_foto"?: string,"pemasangan_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "foto_pemasangan_pemasangan_id_fkey"
+      columns: ["pemasangan_id"]
+isOneToOne: false
+      referencedRelation: "pemasangan"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"foto_pengembalian": {
+                  Row: {
+                    "created_at": string,"id": number,"path_foto": string,"pengembalian_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"path_foto": string,"pengembalian_id": number
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"path_foto"?: string,"pengembalian_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "foto_pengembalian_pengembalian_id_fkey"
+      columns: ["pengembalian_id"]
+isOneToOne: false
+      referencedRelation: "pengembalian"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"kategori": {
                   Row: {
                     "created_at": string,"id": number,"kode_prefix": string,"nama": string,"updated_at": string
@@ -121,6 +161,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"pemasangan": {
+                  Row: {
+                    "created_at": string,"id": number,"peminjaman_id": number,"staff_id": string,"tgl_pemasangan": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: number,"peminjaman_id": number,"staff_id": string,"tgl_pemasangan"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: number,"peminjaman_id"?: number,"staff_id"?: string,"tgl_pemasangan"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "pemasangan_peminjaman_id_fkey"
+      columns: ["peminjaman_id"]
+isOneToOne: true
+      referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "pemasangan_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "staff_it"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"peminjaman": {
                   Row: {
                     "created_at": string,"dicatat_oleh": string,"divisi_peminjam": string,"id": number,"keperluan": string,"kode_peminjaman": string,"kontak_peminjam": string,"nama_peminjam": string,"perpanjangan_dari": number | null,"ruangan": string,"status": Database["public"]['Enums']["status_peminjaman"],"tgl_peminjaman": string,"tgl_rencana_kembali": string,"updated_at": string
@@ -144,6 +210,70 @@ isOneToOne: false
       columns: ["perpanjangan_dari"]
 isOneToOne: true
       referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"pengembalian": {
+                  Row: {
+                    "created_at": string,"id": number,"peminjaman_id": number,"staff_id": string,"tgl_kembali": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: number,"peminjaman_id": number,"staff_id": string,"tgl_kembali"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: number,"peminjaman_id"?: number,"staff_id"?: string,"tgl_kembali"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "pengembalian_peminjaman_id_fkey"
+      columns: ["peminjaman_id"]
+isOneToOne: true
+      referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "pengembalian_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "staff_it"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"penggantian_unit": {
+                  Row: {
+                    "alasan": string,"aset_baru_id": number,"aset_lama_id": number,"created_at": string,"detail_peminjaman_id": number,"id": number,"staff_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alasan": string,"aset_baru_id": number,"aset_lama_id": number,"created_at"?: string,"detail_peminjaman_id": number,"id"?: never,"staff_id"?: string | null
+                  }
+                  Update: {
+                    "alasan"?: string,"aset_baru_id"?: number,"aset_lama_id"?: number,"created_at"?: string,"detail_peminjaman_id"?: number,"id"?: never,"staff_id"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "penggantian_unit_aset_baru_id_fkey"
+      columns: ["aset_baru_id"]
+isOneToOne: false
+      referencedRelation: "aset"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "penggantian_unit_aset_lama_id_fkey"
+      columns: ["aset_lama_id"]
+isOneToOne: false
+      referencedRelation: "aset"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "penggantian_unit_detail_peminjaman_id_fkey"
+      columns: ["detail_peminjaman_id"]
+isOneToOne: false
+      referencedRelation: "detail_peminjaman"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "penggantian_unit_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "staff_it"
       referencedColumns: ["id"]
     }
                   ]
@@ -248,6 +378,9 @@ isOneToOne: false
               "id": number,"kode_peminjaman": string
             }[]
                            },
+"ganti_unit_pemasangan":
+{ Args: { "p_alasan": string,"p_aset_baru_id": number,"p_detail_id": number }; Returns: undefined
+                           },
 "has_permission":
 { Args: { "nama_permission": string }; Returns: boolean
                            },
@@ -267,6 +400,18 @@ isOneToOne: false
                            },
 "next_kode_peminjaman":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"reservasi_id_kejadian":
+{ Args: { "p_jenis": string,"p_peminjaman_id": number }; Returns: number
+                           },
+"simpan_pemasangan":
+{ Args: { "p_foto": (string)[],"p_pemasangan_id": number,"p_peminjaman_id": number,"p_units": Json }; Returns: undefined
+                           },
+"simpan_pengembalian":
+{ Args: { "p_foto": (string)[],"p_peminjaman_id": number,"p_pengembalian_id": number,"p_units": Json }; Returns: undefined
+                           },
+"validasi_foto":
+{ Args: { "p_paths": (string)[],"p_prefix": string }; Returns: (string)[]
                            },
 "wajib_permission":
 { Args: { "p_permission": string }; Returns: undefined
