@@ -86,3 +86,13 @@ Input tanggal memakai `components/datetime-field.tsx` dengan format tetap `dd/mm
 Halaman tanpa izin dicegat di `proxy.ts` (`lib/route-permissions.ts`) dan dijawab dengan status **HTTP 403**.
 
 Uji: `npx playwright test tests/e2e/validasi.spec.ts` (tidak menyimpan data).
+
+### Halaman /debug (reset data demo)
+
+Aktif hanya bila `ENABLE_DEBUG_PAGE=true`; selain itu `/debug` menjadi 404 dan aksinya ditolak. Akses memerlukan permission
+`debug.reset` (diberikan ke role Administrasi), dan tombol reset baru aktif setelah mengetik `RESET`.
+Reset menjalankan `reset_data_demo()` (hanya `service_role`, satu transaksi): semua transaksi, log, dan notifikasi dikosongkan,
+kategori LPT/PRJ/WCM dan 8 aset demo kembali `tersedia/baik`, aset/kategori lain dihapus. Setelah itu foto di Storage dihapus.
+Akun, role, dan permission tidak berubah. **Jangan aktifkan di produksi.**
+
+Uji: `npx playwright test tests/e2e/debug.spec.ts` (reset sungguhan hanya dengan `RUN_RESET=1`).

@@ -16,6 +16,7 @@ const RUTE: { pola: RegExp; permission: Permission[] }[] = [
   { pola: /^\/kategori(\/|$)/, permission: ["kategori.view"] },
   { pola: /^\/akun(\/|$)/, permission: ["user.view"] },
   { pola: /^\/role(\/|$)/, permission: ["role.view"] },
+  { pola: /^\/debug(\/|$)/, permission: ["debug.reset"] },
 ];
 
 /** Permission untuk path ini, atau null bila rute tidak dibatasi permission khusus. */

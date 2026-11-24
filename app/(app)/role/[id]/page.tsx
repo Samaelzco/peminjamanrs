@@ -18,6 +18,7 @@ const URUTAN_MODUL = [
   "Pemasangan",
   "Pengembalian",
   "Riwayat",
+  "Debug",
 ];
 
 export default async function RolePermissionPage({ params }: PageProps<"/role/[id]">) {

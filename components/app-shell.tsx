@@ -8,6 +8,7 @@ import {
   HiOutlineArchiveBox,
   HiOutlineArrowRightOnRectangle,
   HiOutlineBars3,
+  HiOutlineBugAnt,
   HiOutlineClock,
   HiOutlineKey,
   HiOutlinePlusCircle,
@@ -27,6 +28,7 @@ const ICONS: Record<MenuIcon, typeof HiOutlineSquares2X2> = {
   kategori: HiOutlineTag,
   akun: HiOutlineUsers,
   role: HiOutlineKey,
+  debug: HiOutlineBugAnt,
 };
 
 type Props = {

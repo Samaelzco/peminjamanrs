@@ -414,6 +414,9 @@ isOneToOne: false
 "reservasi_id_kejadian":
 { Args: { "p_jenis": string,"p_peminjaman_id": number }; Returns: number
                            },
+"reset_data_demo":
+{ Args: Record<PropertyKey, never>; Returns: Json
+                           },
 "ringkasan_dashboard":
 { Args: Record<PropertyKey, never>; Returns: {
               "aset_tersedia": number,"diajukan": number,"dipinjam": number,"terlambat": number

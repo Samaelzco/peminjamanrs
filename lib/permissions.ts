@@ -22,6 +22,7 @@ export const PERMISSIONS = [
   "pemasangan.create",
   "pengembalian.create",
   "riwayat.view",
+  "debug.reset",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
