@@ -62,3 +62,10 @@ export async function requirePermission(permission: Permission): Promise<Current
   if (!user.permissions.includes(permission)) forbidden();
   return user;
 }
+
+/** Untuk halaman: cukup salah satu permission. */
+export async function requireAnyPermission(...permissions: Permission[]): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (!permissions.some((p) => user.permissions.includes(p))) forbidden();
+  return user;
+}

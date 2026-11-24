@@ -13,7 +13,7 @@ import {
   TableHeadCell,
   TableRow,
 } from "flowbite-react";
-import { requirePermission } from "@/lib/auth";
+import { requireAnyPermission } from "@/lib/auth";
 import { formatWita, menitSejak } from "@/lib/datetime";
 import { KONDISI, STATUS_PEMINJAMAN } from "@/lib/labels";
 import { getPeminjaman } from "@/lib/peminjaman";
@@ -24,7 +24,7 @@ import { Timeline } from "./timeline";
 export const metadata: Metadata = { title: "Detail Peminjaman" };
 
 export default async function DetailPeminjamanPage({ params, searchParams }: PageProps<"/peminjaman/[id]">) {
-  const user = await requirePermission("peminjaman.view");
+  const user = await requireAnyPermission("peminjaman.view", "riwayat.view");
   const { id } = await params;
   const { baru, perpanjangan } = await searchParams;
   const pid = Number(id);

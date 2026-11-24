@@ -17,7 +17,10 @@
     "test:master": "tsx --env-file=.env.local scripts/tests/master.test.ts",
     "test:peminjaman": "tsx --env-file=.env.local scripts/tests/peminjaman.test.ts",
     "test:pemasangan": "tsx --env-file=.env.local scripts/tests/pemasangan.test.ts",
-    "test:perpanjangan": "tsx --env-file=.env.local scripts/tests/perpanjangan.test.ts"
+    "test:perpanjangan": "tsx --env-file=.env.local scripts/tests/perpanjangan.test.ts",
+    "test:riwayat": "tsx --env-file=.env.local scripts/tests/riwayat.test.ts",
+    "test:db": "npm run test:rbac && npm run test:master && npm run test:peminjaman && npm run test:pemasangan && npm run test:perpanjangan",
+    "test:web": "npm run test:http && npm run test:riwayat"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",

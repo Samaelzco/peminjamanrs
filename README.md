@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistem Peminjaman Perangkat — RSUP Prof. Ngoerah
 
-## Getting Started
+Aplikasi web untuk memantau ketersediaan perangkat (laptop, proyektor, webcam), mencatat peminjaman, pemasangan,
+pengembalian, perpanjangan, menandai keterlambatan otomatis, dan menyimpan riwayat.
 
-First, run the development server:
+**Stack:** Next.js 16 (App Router, TypeScript strict, Cache Components) · Supabase (Postgres, Auth, Storage, pg_cron)
+· `@supabase/ssr` · Tailwind CSS 4 + `flowbite-react` · `zod` · Supabase CLI.
+
+## Menjalankan
 
 ```bash
+npm install
+cp .env.example .env.local      # isi semua nilai (lihat bawah)
+npx supabase login
+npx supabase link --project-ref <project-ref>
+npm run db:push                 # kirim semua migration ke project online
+npm run db:types                # generate lib/database.types.ts
+npm run seed:admin              # akun Administrasi dari SEED_ADMIN_*
+npm run seed:demo               # kategori, 8 aset, akun Sarpras dari SEED_SARPRAS_*
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+| Variabel | Keterangan |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | URL dan publishable key project |
+| `SUPABASE_SERVICE_ROLE_KEY` | **Hanya server** (`lib/supabase/admin.ts` memakai `server-only`) |
+| `SUPABASE_DB_PASSWORD` | Dipakai Supabase CLI (`db push`, `gen types`) |
+| `SEED_ADMIN_*`, `SEED_SARPRAS_*` | Akun awal untuk seeder |
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Pengaturan di dashboard Supabase (bukan skema):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Authentication → Sign In / Providers → **Allow new users to sign up = off** (pendaftaran mandiri dimatikan).
+- Disarankan: aktifkan *Leaked password protection*.
 
-## Learn More
+## Perintah
 
-To learn more about Next.js, take a look at the following resources:
+| Perintah | Fungsi |
+|---|---|
+| `npm run lint` / `npm run typecheck` / `npm run build` | Pemeriksaan kode |
+| `npm run db:push` | Kirim migration baru ke project online (`supabase db push --remote`) |
+| `npm run db:types` | Generate tipe TypeScript dari skema |
+| `npm run seed:admin` / `npm run seed:demo` | Seeder (aman dijalankan ulang) |
+| `npm run test:db` | Uji lapis database: RBAC, data master, peminjaman, pemasangan/pengembalian, perpanjangan/terlambat |
+| `npm run test:web` | Uji akses halaman lewat HTTP (jalankan dulu `npm run build && npx next start -p 3123`) |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Uji membuat akun sementara dan data transaksi, lalu membersihkannya kembali (aset demo dikembalikan ke
+`tersedia/baik`). Uji pg_cron sungguhan (menunggu ≤15 menit): `npx tsx --env-file=.env.local scripts/tests/cron-nyata.test.ts`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Arsitektur singkat
 
-## Deploy on Vercel
+- **RBAC dua lapis.** Next.js: menu, halaman (`requirePermission` → 403), tombol, dan setiap server action
+  (`authorize`). Database: RLS di semua tabel memakai `has_permission()` (`security definer`, `stable`); user
+  `non_aktif` tidak punya permission apa pun. `proxy.ts` (pengganti middleware di Next 16) mengeluarkan user non-aktif.
+- **Semua perubahan lintas tabel lewat RPC** dalam satu transaksi: `buat_peminjaman`, `batalkan_peminjaman`,
+  `ganti_unit_pemasangan`, `simpan_pemasangan`, `simpan_pengembalian`, `perpanjang_peminjaman`. Client hanya punya
+  hak `SELECT` pada tabel transaksi.
+- **Penolakan peminjaman ganda:** `buat_peminjaman` mengunci baris aset (`FOR UPDATE`) lalu mengecek ulang
+  ketersediaan (aturan 6.1) dan menyebut unit yang bentrok.
+- **Transisi status** divalidasi trigger `guard_status_peminjaman` (6.9); setiap perubahan tercatat di
+  `log_peminjaman` untuk timeline. Status aset ke/dari `dipinjam` hanya bisa diubah oleh alur peminjaman.
+- **Foto:** bucket privat `foto-peminjaman`. ID pemasangan/pengembalian dipesan dulu
+  (`reservasi_id_kejadian`), foto dikompres di browser (≤1600 px, JPEG) dan diunggah ke
+  `pemasangan/{id}/{uuid}.jpg`, lalu RPC memverifikasi file benar-benar ada sebelum menyimpan. Ditampilkan dengan
+  signed URL.
+- **pg_cron** `tandai-peminjaman-terlambat` setiap 15 menit (UTC) → `tandai_terlambat()`; notifikasi
+  `jenis='terlambat'` dijaga unique index sehingga tidak ganda.
+- **Waktu** disimpan `timestamptz`, ditampilkan WITA (`Asia/Makassar`) dengan format `dd/MM/yyyy HH:mm`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Tambahan di luar spesifikasi (disepakati)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Tabel `penggantian_unit` (alasan ganti unit saat pemasangan) dan `log_peminjaman` (timeline).
+- Kolom `notifikasi.jenis` untuk mencegah notifikasi terlambat ganda.
+- Kategori & kode aset tidak dapat diubah setelah aset dibuat; `kode_prefix` terkunci bila kategori punya aset.
+- Admin tidak dapat menonaktifkan akun sendiri atau mengubah role sendiri.
+- Alasan perpanjangan ditambahkan ke keperluan: `"<keperluan lama>\n— Perpanjangan: <alasan>"`.
