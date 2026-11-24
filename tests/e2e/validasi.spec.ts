@@ -127,8 +127,8 @@ test("Kategori: kode prefix hanya huruf kapital; Akun: aturan password", async (
   await page.waitForLoadState("networkidle"); // tunggu hydrate React sebelum mengetik
   await page.getByRole("button", { name: "Tambah Kategori" }).click();
   const prefix = page.locator("#kode_prefix");
-  await prefix.pressSequentially("ab1-c");
-  await expect(prefix).toHaveValue("ABC");
+  await prefix.pressSequentially("ti1--lp_t");
+  await expect(prefix).toHaveValue("TI-LPT");
   await page.getByRole("button", { name: "Batal" }).click();
 
   page = await (await browser.newContext()).newPage();

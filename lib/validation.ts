@@ -14,6 +14,7 @@ export const BATAS = {
   namaAset: 100,
   deskripsiAset: 500,
   namaKategori: 50,
+  kodePrefix: 17,
   namaRole: 50,
   deskripsiRole: 255,
   email: 254,
@@ -32,8 +33,9 @@ export const BATAS = {
 // ---------------------------------------------------------------------
 /** Hanya angka (untuk nomor kontak & jumlah). */
 export const hanyaAngka = (v: string) => v.replace(/\D+/g, "");
-/** Hanya huruf A–Z kapital (untuk kode prefix). */
-export const hanyaHurufKapital = (v: string) => v.toUpperCase().replace(/[^A-Z]+/g, "");
+/** Kode prefix: huruf A–Z kapital dan tanda hubung (mis. TI-LPT). */
+export const sanitasiPrefix = (v: string) =>
+  v.toUpperCase().replace(/[^A-Z-]+/g, "").replace(/-{2,}/g, "-").replace(/^-/, "");
 
 // ---------------------------------------------------------------------
 // Skema zod (server)
@@ -95,8 +97,12 @@ export const password = z
   .regex(/[A-Za-z]/, "Password harus mengandung huruf.")
   .regex(/\d/, "Password harus mengandung angka.");
 
+/** Segmen 2–5 huruf kapital dipisah tanda hubung, maks 3 segmen (mis. LPT, TI-LPT). */
 export const kodePrefix = z
   .string()
   .trim()
   .toUpperCase()
-  .regex(/^[A-Z]{2,5}$/, "Kode prefix harus 2–5 huruf kapital, contoh LPT.");
+  .regex(
+    /^[A-Z]{2,5}(-[A-Z]{2,5}){0,2}$/,
+    "Kode prefix berupa huruf kapital 2–5 karakter, boleh dipisah tanda hubung, contoh TI-LPT.",
+  );

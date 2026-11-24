@@ -21,11 +21,7 @@ const idSchema = z.coerce.number().int().positive();
 
 export type KategoriInput = z.input<typeof schema>;
 
-function uniqueMessage(message: string) {
-  return message.includes("kode_prefix")
-    ? "Kode prefix sudah dipakai kategori lain."
-    : "Nama kategori sudah dipakai.";
-}
+// Prefix boleh dipakai bersama beberapa kategori; yang unik hanya nama.
 
 export async function createKategori(input: KategoriInput): Promise<ActionResult> {
   return runAction(async () => {
@@ -36,7 +32,7 @@ export async function createKategori(input: KategoriInput): Promise<ActionResult
     const supabase = await createClient();
     const { error } = await supabase.from("kategori").insert(parsed.data);
     if (error) {
-      return { ok: false, error: error.code === "23505" ? uniqueMessage(error.message) : dbErrorMessage(error) };
+      return { ok: false, error: error.code === "23505" ? "Nama kategori sudah dipakai." : dbErrorMessage(error) };
     }
     refresh();
     return { ok: true, message: `Kategori "${parsed.data.nama}" berhasil ditambahkan.` };
@@ -53,7 +49,7 @@ export async function updateKategori(id: number, input: KategoriInput): Promise<
     const supabase = await createClient();
     const { error } = await supabase.from("kategori").update(parsed.data).eq("id", kategoriId);
     if (error) {
-      return { ok: false, error: error.code === "23505" ? uniqueMessage(error.message) : dbErrorMessage(error) };
+      return { ok: false, error: error.code === "23505" ? "Nama kategori sudah dipakai." : dbErrorMessage(error) };
     }
     refresh();
     return { ok: true, message: "Kategori berhasil diperbarui." };

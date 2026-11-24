@@ -19,7 +19,7 @@ import {
 } from "flowbite-react";
 import { HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
-import { BATAS, hanyaHurufKapital } from "@/lib/validation";
+import { BATAS, sanitasiPrefix } from "@/lib/validation";
 import { createKategori, deleteKategori, updateKategori } from "./actions";
 
 type Kategori = { id: number; nama: string; kodePrefix: string; jumlahAset: number };
@@ -177,12 +177,12 @@ function KategoriFormModal({
                 id="kode_prefix"
                 name="kode_prefix"
                 defaultValue={kategori?.kodePrefix}
-                placeholder="LPT"
-                maxLength={5}
+                placeholder="TI-LPT"
+                maxLength={BATAS.kodePrefix}
                 className="uppercase"
                 autoComplete="off"
                 onChange={(e) => {
-                  e.currentTarget.value = hanyaHurufKapital(e.currentTarget.value);
+                  e.currentTarget.value = sanitasiPrefix(e.currentTarget.value);
                 }}
                 required
                 disabled={prefixLocked}
