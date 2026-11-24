@@ -18,7 +18,7 @@ export function ResetPanel() {
       </div>
       <ul className="list-disc space-y-1 ps-5 text-sm text-gray-600">
         <li>Menghapus semua peminjaman, pemasangan, pengembalian, foto, log, dan notifikasi.</li>
-        <li>Mengembalikan kategori LPT/PRJ/WCM dan 8 aset demo ke Tersedia/Baik; aset & kategori lain dihapus.</li>
+        <li>Mengembalikan 4 kategori demo (Laptop, Proyektor, Webcam, Conf-Cam) dan 8 aset demo (TI-LPT-001 dst.) ke Tersedia/Baik; aset & kategori lain dihapus.</li>
         <li>Akun, role, dan permission tidak berubah.</li>
       </ul>
 
