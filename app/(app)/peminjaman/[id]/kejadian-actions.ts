@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { authorize, dbErrorMessage, runAction, type ActionResult } from "@/lib/action";
 import { createClient } from "@/lib/supabase/server";
+import { BATAS, teks } from "@/lib/validation";
 
 const idSchema = z.coerce.number().int().positive();
 const fotoSchema = z.array(z.string().min(1).max(200)).min(1, "Unggah minimal 1 foto.").max(30);
@@ -30,7 +31,7 @@ export async function gantiUnit(detailId: number, asetBaruId: number, alasan: st
       .object({
         detailId: idSchema,
         asetBaruId: idSchema,
-        alasan: z.string().trim().min(1, "Alasan penggantian wajib diisi.").max(300),
+        alasan: teks("Alasan penggantian", BATAS.alasan),
       })
       .safeParse({ detailId, asetBaruId, alasan });
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
@@ -85,7 +86,7 @@ const pengembalianSchema = z.object({
         .object({
           detail_id: idSchema,
           kondisi_masuk: z.enum(["baik", "rusak", "hilang"], "Pilih kondisi masuk."),
-          catatan: z.string().trim().max(500).optional().default(""),
+          catatan: z.string().trim().max(BATAS.catatan, `Catatan maksimal ${BATAS.catatan} karakter.`).optional().default(""),
         })
         .refine((u) => u.kondisi_masuk === "baik" || u.catatan.length > 0, {
           message: "Catatan wajib diisi untuk unit yang rusak atau hilang.",

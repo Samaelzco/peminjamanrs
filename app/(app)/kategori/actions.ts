@@ -10,14 +10,11 @@ import {
   type ActionResult,
 } from "@/lib/action";
 import { createClient } from "@/lib/supabase/server";
+import { BATAS, kodePrefix, teks } from "@/lib/validation";
 
 const schema = z.object({
-  nama: z.string().trim().min(1, "Nama kategori wajib diisi.").max(60),
-  kode_prefix: z
-    .string()
-    .trim()
-    .toUpperCase()
-    .regex(/^[A-Z]{2,5}$/, "Kode prefix 2–5 huruf kapital, contoh LPT."),
+  nama: teks("Nama kategori", BATAS.namaKategori),
+  kode_prefix: kodePrefix,
 });
 
 const idSchema = z.coerce.number().int().positive();

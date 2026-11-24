@@ -24,6 +24,7 @@ import {
 import { HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
 import { KONDISI, STATUS_ASET, type KondisiAset, type StatusAset } from "@/lib/labels";
+import { BATAS } from "@/lib/validation";
 import { createAset, deleteAset, updateAset } from "./actions";
 
 export type AsetRow = {
@@ -225,12 +226,13 @@ function AsetFormModal({
             </div>
             <div>
               <Label htmlFor="nama_aset" className="mb-1.5 block">Nama aset</Label>
-              <TextInput id="nama_aset" name="nama_aset" defaultValue={aset?.namaAset} required color={err("nama_aset") ? "failure" : undefined} />
+              <TextInput id="nama_aset" name="nama_aset" maxLength={BATAS.namaAset} defaultValue={aset?.namaAset} required color={err("nama_aset") ? "failure" : undefined} />
               {err("nama_aset") && <HelperText color="failure">{err("nama_aset")}</HelperText>}
             </div>
             <div>
               <Label htmlFor="deskripsi" className="mb-1.5 block">Deskripsi (opsional)</Label>
-              <Textarea id="deskripsi" name="deskripsi" rows={2} defaultValue={aset?.deskripsi ?? ""} />
+              <Textarea id="deskripsi" name="deskripsi" rows={2} maxLength={BATAS.deskripsiAset} defaultValue={aset?.deskripsi ?? ""} />
+              <HelperText className="text-xs text-gray-500">Maksimal {BATAS.deskripsiAset} karakter.</HelperText>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>

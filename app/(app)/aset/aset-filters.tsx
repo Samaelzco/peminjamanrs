@@ -5,6 +5,7 @@ import { useTransition } from "react";
 import { Button, Select, Spinner, TextInput } from "flowbite-react";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { KONDISI, KONDISI_ASET_LIST, STATUS_ASET, STATUS_ASET_LIST } from "@/lib/labels";
+import { BATAS } from "@/lib/validation";
 
 type Value = { kategori: string; status: string; kondisi: string; q: string };
 
@@ -39,6 +40,7 @@ export function AsetFilters({
           name="q"
           defaultValue={value.q}
           placeholder="Cari kode atau nama aset"
+          maxLength={BATAS.cari}
           icon={HiOutlineMagnifyingGlass}
           className="flex-1"
         />

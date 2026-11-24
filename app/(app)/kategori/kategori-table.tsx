@@ -19,6 +19,7 @@ import {
 } from "flowbite-react";
 import { HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
+import { BATAS, hanyaHurufKapital } from "@/lib/validation";
 import { createKategori, deleteKategori, updateKategori } from "./actions";
 
 type Kategori = { id: number; nama: string; kodePrefix: string; jumlahAset: number };
@@ -167,7 +168,7 @@ function KategoriFormModal({
           <div className="space-y-4">
             <div>
               <Label htmlFor="nama" className="mb-1.5 block">Nama kategori</Label>
-              <TextInput id="nama" name="nama" defaultValue={kategori?.nama} required color={err("nama") ? "failure" : undefined} />
+              <TextInput id="nama" name="nama" maxLength={BATAS.namaKategori} defaultValue={kategori?.nama} required color={err("nama") ? "failure" : undefined} />
               {err("nama") && <HelperText color="failure">{err("nama")}</HelperText>}
             </div>
             <div>
@@ -179,6 +180,10 @@ function KategoriFormModal({
                 placeholder="LPT"
                 maxLength={5}
                 className="uppercase"
+                autoComplete="off"
+                onChange={(e) => {
+                  e.currentTarget.value = hanyaHurufKapital(e.currentTarget.value);
+                }}
                 required
                 disabled={prefixLocked}
                 color={err("kode_prefix") ? "failure" : undefined}

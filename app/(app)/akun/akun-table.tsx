@@ -22,6 +22,7 @@ import {
 import { HiOutlinePencilSquare, HiOutlinePlus } from "react-icons/hi2";
 import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
 import { formatWita } from "@/lib/datetime";
+import { BATAS } from "@/lib/validation";
 import { createAkun, toggleStatusAkun, updateAkun } from "./actions";
 
 type Akun = {
@@ -207,12 +208,12 @@ function AkunFormModal({
           <div className="space-y-4">
             <div>
               <Label htmlFor="nama" className="mb-1.5 block">Nama</Label>
-              <TextInput id="nama" name="nama" defaultValue={akun?.nama} required color={err("nama") ? "failure" : undefined} />
+              <TextInput id="nama" name="nama" maxLength={BATAS.namaOrang} defaultValue={akun?.nama} required color={err("nama") ? "failure" : undefined} />
               {err("nama") && <HelperText color="failure">{err("nama")}</HelperText>}
             </div>
             <div>
               <Label htmlFor="email" className="mb-1.5 block">Email</Label>
-              <TextInput id="email" name="email" type="email" defaultValue={akun?.email} required color={err("email") ? "failure" : undefined} />
+              <TextInput id="email" name="email" type="email" maxLength={BATAS.email} defaultValue={akun?.email} required color={err("email") ? "failure" : undefined} />
               {err("email") && <HelperText color="failure">{err("email")}</HelperText>}
             </div>
             <div>
@@ -224,11 +225,14 @@ function AkunFormModal({
                 name="password"
                 type="password"
                 autoComplete="new-password"
+                maxLength={BATAS.passwordMax}
                 required={mode === "create"}
-                placeholder={mode === "edit" ? "Kosongkan jika tidak diganti" : "Minimal 8 karakter"}
+                placeholder={mode === "edit" ? "Kosongkan jika tidak diganti" : "Minimal 8 karakter, huruf & angka"}
                 color={err("password") ? "failure" : undefined}
               />
-              {err("password") && <HelperText color="failure">{err("password")}</HelperText>}
+              <HelperText color={err("password") ? "failure" : undefined}>
+                {err("password") ?? `${BATAS.passwordMin}–${BATAS.passwordMax} karakter, mengandung huruf dan angka.`}
+              </HelperText>
             </div>
             <div>
               <Label htmlFor="role_id" className="mb-1.5 block">Role</Label>

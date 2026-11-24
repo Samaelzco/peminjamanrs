@@ -10,25 +10,19 @@ import {
   type ActionResult,
 } from "@/lib/action";
 import { createClient } from "@/lib/supabase/server";
-
-const optionalText = z
-  .string()
-  .trim()
-  .max(500)
-  .optional()
-  .transform((v) => v || null);
+import { BATAS, teks, teksOpsional } from "@/lib/validation";
 
 const createSchema = z.object({
   kategori_id: z.coerce.number().int().positive("Kategori wajib dipilih."),
-  nama_aset: z.string().trim().min(1, "Nama aset wajib diisi.").max(120),
-  deskripsi: optionalText,
+  nama_aset: teks("Nama aset", BATAS.namaAset),
+  deskripsi: teksOpsional("Deskripsi", BATAS.deskripsiAset),
   kondisi: z.enum(["baik", "rusak"], "Kondisi tidak valid."),
   status: z.enum(["tersedia", "dalam_perbaikan", "hilang"], "Status tidak valid."),
 });
 
 const updateSchema = z.object({
-  nama_aset: z.string().trim().min(1, "Nama aset wajib diisi.").max(120),
-  deskripsi: optionalText,
+  nama_aset: teks("Nama aset", BATAS.namaAset),
+  deskripsi: teksOpsional("Deskripsi", BATAS.deskripsiAset),
   kondisi: z.enum(["baik", "rusak"], "Kondisi tidak valid."),
   // 'dipinjam' hanya boleh muncul kalau status tidak berubah (dicek ulang oleh trigger DB).
   status: z.enum(["tersedia", "dipinjam", "dalam_perbaikan", "hilang"], "Status tidak valid."),

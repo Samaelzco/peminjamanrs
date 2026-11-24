@@ -188,12 +188,15 @@ test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
     await admin.locator("table tbody tr", { hasText: "LPT-001" }).getByRole("button", { name: "Ganti" }).click();
     const select = admin.getByLabel("Ganti LPT-001");
     await expect(select).toBeVisible();
+    await expect(select.locator("option")).not.toHaveCount(1);
     const opsi = (await select.locator("option").allTextContents()).filter((o) => !o.startsWith("Pilih"));
     const kodeOpsi = opsi.map((o) => o.split(" ")[0]);
     await shot(admin, "1.2-dropdown-ganti");
     assert(JSON.stringify(kodeOpsi) === '["LPT-002","LPT-003"]', `opsi: ${kodeOpsi.join(", ")}`);
     const value = await select.locator("option", { hasText: "LPT-002" }).getAttribute("value");
     await select.selectOption(value!);
+    await admin.getByRole("button", { name: "Ganti Unit" }).click();
+    await expect(select).toBeHidden();
     const kode = await kodeDraft(admin);
     assert(JSON.stringify(kode) === '["LPT-002","WCM-001"]', `tabel: ${kode.join(", ")}`);
     return `Opsi ${kodeOpsi.join(", ")}; tabel sekarang ${kode.join(", ")}`;
@@ -403,7 +406,8 @@ test("Langkah 4 – TRX-003: perpanjangan dari TRX-002", async () => {
     const unit = b!.detail_peminjaman.map((d) => `${d.aset!.kode_aset}:${d.kondisi_keluar}`).sort();
     const p = PEMINJAM["TRX-002"];
     assert(b!.perpanjangan_dari === lama.id, `perpanjangan_dari ${b!.perpanjangan_dari}`);
-    assert(b!.nama_peminjam === p.nama && b!.ruangan === p.ruangan && b!.divisi_peminjam === p.divisi && b!.kontak_peminjam === p.kontak, "data peminjam berbeda");
+    const { data: l } = await db.from("peminjaman").select("kontak_peminjam").eq("id", lama.id).single();
+    assert(b!.nama_peminjam === p.nama && b!.ruangan === p.ruangan && b!.divisi_peminjam === p.divisi && b!.kontak_peminjam === l!.kontak_peminjam, "data peminjam berbeda");
     assert(JSON.stringify(unit) === '["PRJ-001:baik","WCM-002:baik"]', `unit ${unit}`);
     return `${pemetaan["TRX-003"].kode}: perpanjangan_dari=${lama.kode}, peminjam & ruangan sama, unit ${unit.join(", ")}, keperluan "${b!.keperluan.replace(/\n/g, " ")}"`;
   });
@@ -574,8 +578,9 @@ test("Pemeriksaan akhir", async () => {
     await sarpras.goto("/");
     await sarpras.getByRole("heading", { name: "Dashboard" }).waitFor();
     if (await sarpras.getByRole("link", { name: "Peminjaman Baru" }).count()) temuan.push("menu Peminjaman Baru tampil");
-    await sarpras.goto("/peminjaman/baru");
+    const r403 = await sarpras.goto("/peminjaman/baru");
     if (!(await tertolak(sarpras))) temuan.push("/peminjaman/baru tidak 403");
+    if (r403?.status() !== 403) temuan.push(`/peminjaman/baru status HTTP ${r403?.status()}`);
     await sarpras.goto(`/peminjaman/${p["TRX-003"].id}/perpanjang`);
     if (!(await tertolak(sarpras))) temuan.push("/perpanjang tidak 403");
     await sarpras.goto(`/peminjaman/${p["TRX-003"].id}`);
@@ -612,8 +617,9 @@ test("Pemeriksaan akhir", async () => {
     await admin.goto(`/peminjaman/${p["TRX-003"].id}`);
     await admin.getByRole("heading", { name: "Timeline" }).waitFor();
     if (await admin.getByRole("link", { name: "Pengembalian" }).count()) temuan.push("tombol Pengembalian tampil");
-    await admin.goto(`/peminjaman/${p["TRX-005"].id}/pemasangan`);
+    const r403 = await admin.goto(`/peminjaman/${p["TRX-005"].id}/pemasangan`);
     if (!(await tertolak(admin))) temuan.push("/pemasangan tidak 403");
+    if (r403?.status() !== 403) temuan.push(`/pemasangan status HTTP ${r403?.status()}`);
     await admin.goto(`/peminjaman/${p["TRX-003"].id}/pengembalian`);
     if (!(await tertolak(admin))) temuan.push("/pengembalian tidak 403");
 

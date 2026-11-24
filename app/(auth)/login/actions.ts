@@ -5,8 +5,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 const schema = z.object({
-  email: z.email("Format email tidak valid."),
-  password: z.string().min(1, "Password wajib diisi."),
+  email: z.string().max(254, "Email terlalu panjang.").pipe(z.email("Format email tidak valid.")),
+  password: z.string().min(1, "Password wajib diisi.").max(72, "Password terlalu panjang."),
 });
 
 export type LoginState = { error?: string; email?: string };

@@ -10,15 +10,11 @@ import {
   type ActionResult,
 } from "@/lib/action";
 import { createClient } from "@/lib/supabase/server";
+import { BATAS, teks, teksOpsional } from "@/lib/validation";
 
 const roleSchema = z.object({
-  nama: z.string().trim().min(1, "Nama role wajib diisi.").max(60),
-  deskripsi: z
-    .string()
-    .trim()
-    .max(255)
-    .optional()
-    .transform((v) => v || null),
+  nama: teks("Nama role", BATAS.namaRole),
+  deskripsi: teksOpsional("Deskripsi", BATAS.deskripsiRole),
 });
 
 const idSchema = z.coerce.number().int().positive();

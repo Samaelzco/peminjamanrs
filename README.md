@@ -73,3 +73,16 @@ Uji membuat akun sementara dan data transaksi, lalu membersihkannya kembali (ase
 - Kategori & kode aset tidak dapat diubah setelah aset dibuat; `kode_prefix` terkunci bila kategori punya aset.
 - Admin tidak dapat menonaktifkan akun sendiri atau mengubah role sendiri.
 - Alasan perpanjangan ditambahkan ke keperluan: `"<keperluan lama>\n— Perpanjangan: <alasan>"`.
+
+### Validasi input
+
+Aturan dan batasnya ada di satu tempat, `lib/validation.ts` (`BATAS`), dan dipakai di tiga lapis:
+
+1. **Form (client):** `maxLength`, sanitasi saat mengetik (nomor kontak dan jumlah hanya angka, kode prefix hanya huruf kapital), dan penghitung karakter.
+2. **Server action (zod):** pesan error per kolom. Contoh aturan: nama hanya huruf; kontak 10–15 angka diawali 0/62; lama pinjam maks 30 hari; tanggal keluar maks 7 hari ke belakang; password 8–72 karakter dengan huruf dan angka.
+3. **Database:** CHECK constraint untuk panjang teks dan format kontak (migration `20261125000100`), sehingga panggilan API/RPC langsung pun ditolak.
+
+Input tanggal memakai `components/datetime-field.tsx` dengan format tetap `dd/mm/yyyy jj:mm` (24 jam, WITA), tidak bergantung locale browser.
+Halaman tanpa izin dicegat di `proxy.ts` (`lib/route-permissions.ts`) dan dijawab dengan status **HTTP 403**.
+
+Uji: `npx playwright test tests/e2e/validasi.spec.ts` (tidak menyimpan data).

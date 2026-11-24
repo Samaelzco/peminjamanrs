@@ -112,8 +112,10 @@ export async function siapkanFotoDummy(browser: Browser, jumlah = 5) {
 // ---------------------------------------------------------------------
 // Utilitas waktu: nilai <input type="datetime-local"> dalam WITA
 // ---------------------------------------------------------------------
+/** Nilai ketik untuk DateTimeField: dd/MM/yyyy HH:mm (WITA). */
 export function witaInput(msDariSekarang: number) {
-  return new Date(Date.now() + msDariSekarang + 8 * 3600_000).toISOString().slice(0, 16);
+  const iso = new Date(Date.now() + msDariSekarang + 8 * 3600_000).toISOString();
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)} ${iso.slice(11, 16)}`;
 }
 export const JAM = 3600_000;
 export const HARI = 24 * JAM;

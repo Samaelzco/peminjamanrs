@@ -11,6 +11,7 @@ import {
 } from "react-icons/hi2";
 import { ResultAlert, useAction } from "@/components/feedback";
 import type { StatusPeminjaman } from "@/lib/labels";
+import { BATAS } from "@/lib/validation";
 import { batalkanPeminjaman } from "../actions";
 
 type Props = {
@@ -73,7 +74,7 @@ export function AksiPeminjaman({ id, kode, status, can }: Props) {
               Peminjaman akan dibatalkan dan semua unitnya kembali tersedia untuk dipinjam.
             </p>
             <Label htmlFor="alasan" className="mb-1.5 block">Alasan (opsional)</Label>
-            <Textarea id="alasan" name="alasan" rows={2} maxLength={300} />
+            <Textarea id="alasan" name="alasan" rows={2} maxLength={BATAS.alasan} />
           </ModalBody>
           <ModalFooter className="justify-end">
             <Button color="alternative" onClick={() => setBatal(false)} disabled={action.pending}>Tutup</Button>

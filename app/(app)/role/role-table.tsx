@@ -22,6 +22,7 @@ import {
 } from "flowbite-react";
 import { HiOutlineKey, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
+import { BATAS } from "@/lib/validation";
 import { createRole, deleteRole, updateRole } from "./actions";
 
 type Role = {
@@ -177,12 +178,13 @@ function RoleFormModal({
           <div className="space-y-4">
             <div>
               <Label htmlFor="nama" className="mb-1.5 block">Nama role</Label>
-              <TextInput id="nama" name="nama" defaultValue={role?.nama} required color={err("nama") ? "failure" : undefined} />
+              <TextInput id="nama" name="nama" maxLength={BATAS.namaRole} defaultValue={role?.nama} required color={err("nama") ? "failure" : undefined} />
               {err("nama") && <HelperText color="failure">{err("nama")}</HelperText>}
             </div>
             <div>
               <Label htmlFor="deskripsi" className="mb-1.5 block">Deskripsi</Label>
-              <Textarea id="deskripsi" name="deskripsi" rows={3} defaultValue={role?.deskripsi ?? ""} />
+              <Textarea id="deskripsi" name="deskripsi" rows={3} maxLength={BATAS.deskripsiRole} defaultValue={role?.deskripsi ?? ""} />
+              <HelperText className="text-xs text-gray-500">Maksimal {BATAS.deskripsiRole} karakter.</HelperText>
             </div>
           </div>
         </ModalBody>

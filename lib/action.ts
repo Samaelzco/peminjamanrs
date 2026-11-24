@@ -39,6 +39,8 @@ export function dbErrorMessage(error: Pick<PostgrestError, "code" | "message">):
       return "Data dengan nilai tersebut sudah ada.";
     case "23503":
       return "Data masih dipakai oleh data lain sehingga tidak dapat diproses.";
+    case "23514":
+      return "Isian tidak memenuhi aturan (panjang atau format data). Periksa kembali isian Anda.";
     case "42501":
       return error.message.startsWith("Anda")
         ? error.message

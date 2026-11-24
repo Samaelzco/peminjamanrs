@@ -20,6 +20,7 @@ import {
 import { HiOutlineArrowsRightLeft } from "react-icons/hi2";
 import { PhotoPicker, type PickedPhoto } from "@/components/photo-picker";
 import { removePhotos, uploadPhotos } from "@/lib/upload";
+import { BATAS } from "@/lib/validation";
 import { opsiGantiUnit, type UnitTersedia } from "../actions";
 import { gantiUnit, reservasiId, simpanPemasangan, simpanPengembalian } from "./kejadian-actions";
 
@@ -243,7 +244,7 @@ function GantiUnitModal({
             </div>
             <div>
               <Label htmlFor="alasan" className="mb-1.5 block">Alasan</Label>
-              <Textarea id="alasan" name="alasan" rows={2} required maxLength={300} placeholder="Contoh: tidak menyala saat dites" />
+              <Textarea id="alasan" name="alasan" rows={2} required maxLength={BATAS.alasan} placeholder="Contoh: tidak menyala saat dites" />
               <HelperText>Unit {unit.kodeAset} akan ditandai Dalam Perbaikan.</HelperText>
             </div>
           </div>
@@ -330,7 +331,7 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
                   value={catatan[u.detailId] ?? ""}
                   onChange={(e) => setCatatan((prev) => ({ ...prev, [u.detailId]: e.target.value }))}
                   disabled={s.pending}
-                  maxLength={500}
+                  maxLength={BATAS.catatan}
                   color={cobaSimpan && butuhCatatan(u.detailId) && !catatan[u.detailId]?.trim() ? "failure" : undefined}
                   aria-label={`Catatan ${u.kodeAset}`}
                 />

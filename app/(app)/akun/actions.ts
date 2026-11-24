@@ -10,16 +10,17 @@ import {
   type ActionResult,
 } from "@/lib/action";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { email as emailSchema, namaOrang, password as passwordSchema } from "@/lib/validation";
 import { createClient } from "@/lib/supabase/server";
 
 const baseSchema = z.object({
-  nama: z.string().trim().min(1, "Nama wajib diisi.").max(100),
-  email: z.email("Format email tidak valid.").trim().toLowerCase(),
-  role_id: z.coerce.number().int().positive("Role wajib dipilih."),
+  nama: namaOrang("Nama"),
+  email: emailSchema,
+  role_id: z.coerce.number("Role wajib dipilih.").int().positive("Role wajib dipilih."),
 });
 
 const createSchema = baseSchema.extend({
-  password: z.string().min(8, "Password minimal 8 karakter."),
+  password: passwordSchema,
 });
 
 const updateSchema = baseSchema.extend({
@@ -28,7 +29,7 @@ const updateSchema = baseSchema.extend({
     .string()
     .optional()
     .transform((v) => (v ? v : undefined))
-    .pipe(z.string().min(8, "Password minimal 8 karakter.").optional()),
+    .pipe(passwordSchema.optional()),
 });
 
 export type AkunInput = z.input<typeof createSchema>;

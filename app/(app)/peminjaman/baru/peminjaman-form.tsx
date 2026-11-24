@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   Alert,
   Badge,
@@ -8,6 +8,10 @@ import {
   Card,
   HelperText,
   Label,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Select,
   Spinner,
   Table,
@@ -20,6 +24,8 @@ import {
   TextInput,
 } from "flowbite-react";
 import { HiOutlineArrowsRightLeft, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
+import { DateTimeField } from "@/components/datetime-field";
+import { BATAS, hanyaAngka } from "@/lib/validation";
 import { ambilUnit, buatPeminjaman, opsiGantiUnit, type UnitTersedia } from "../actions";
 
 type FieldErrors = Record<string, string[] | undefined>;
@@ -38,9 +44,10 @@ export function PeminjamanForm({
   const [jumlah, setJumlah] = useState("1");
   const [unitError, setUnitError] = useState<string | null>(null);
   const [adding, startAdding] = useTransition();
+  const [ganti, setGanti] = useState<UnitTersedia | null>(null);
 
-  const [ganti, setGanti] = useState<{ id: number; opsi: UnitTersedia[] | null } | null>(null);
-  const [, startGanti] = useTransition();
+  const [kontak, setKontak] = useState("");
+  const [keperluan, setKeperluan] = useState("");
 
   const [saving, startSaving] = useTransition();
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -53,12 +60,13 @@ export function PeminjamanForm({
       setUnitError("Pilih kategori terlebih dahulu.");
       return;
     }
+    const n = Number(jumlah);
+    if (!Number.isInteger(n) || n < 1 || n > BATAS.jumlahUnitMax) {
+      setUnitError(`Jumlah harus angka 1–${BATAS.jumlahUnitMax}.`);
+      return;
+    }
     startAdding(async () => {
-      const res = await ambilUnit(
-        Number(kategoriId),
-        Number(jumlah),
-        units.map((u) => u.id),
-      );
+      const res = await ambilUnit(Number(kategoriId), n, units.map((u) => u.id));
       if (!res.ok) {
         setUnitError(res.fieldErrors?.jumlah?.[0] ?? res.error);
         return;
@@ -68,39 +76,16 @@ export function PeminjamanForm({
     });
   }
 
-  function bukaGanti(unit: UnitTersedia) {
-    setGanti({ id: unit.id, opsi: null });
-    startGanti(async () => {
-      const res = await opsiGantiUnit(
-        unit.kategori_id,
-        units.map((u) => u.id),
-      );
-      if (!res.ok) {
-        setUnitError(res.error);
-        setGanti(null);
-        return;
-      }
-      setGanti({ id: unit.id, opsi: res.data ?? [] });
-    });
-  }
-
-  function pilihGanti(lamaId: number, baruId: number) {
-    const baru = ganti?.opsi?.find((o) => o.id === baruId);
-    if (!baru) return;
-    setUnits((prev) => prev.map((u) => (u.id === lamaId ? baru : u)));
-    setGanti(null);
-  }
-
   function simpan(formData: FormData) {
     setSaveError(null);
     setFieldErrors({});
     startSaving(async () => {
       const res = await buatPeminjaman({
         nama_peminjam: String(formData.get("nama_peminjam") ?? ""),
-        kontak_peminjam: String(formData.get("kontak_peminjam") ?? ""),
+        kontak_peminjam: kontak,
         divisi_peminjam: String(formData.get("divisi_peminjam") ?? ""),
         ruangan: String(formData.get("ruangan") ?? ""),
-        keperluan: String(formData.get("keperluan") ?? ""),
+        keperluan,
         tgl_peminjaman: String(formData.get("tgl_peminjaman") ?? ""),
         tgl_rencana_kembali: String(formData.get("tgl_rencana_kembali") ?? ""),
         aset_ids: units.map((u) => u.id),
@@ -113,7 +98,6 @@ export function PeminjamanForm({
     });
   }
 
-  // Kelompokkan ringkasan per kategori.
   const ringkasan = Object.entries(
     units.reduce<Record<string, number>>((acc, u) => {
       acc[u.kategori_nama] = (acc[u.kategori_nama] ?? 0) + 1;
@@ -122,40 +106,88 @@ export function PeminjamanForm({
   );
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); simpan(new FormData(e.currentTarget)); }} className="grid gap-6 xl:grid-cols-5">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        simpan(new FormData(e.currentTarget));
+      }}
+      className="grid gap-6 xl:grid-cols-5"
+      noValidate
+    >
       <div className="space-y-6 xl:col-span-2">
         <Card>
           <h2 className="text-base font-semibold text-gray-900">Data Peminjam</h2>
           <div className="space-y-4">
             <Field id="nama_peminjam" label="Nama peminjam" error={fe("nama_peminjam")}>
-              <TextInput id="nama_peminjam" name="nama_peminjam" required />
+              <TextInput id="nama_peminjam" name="nama_peminjam" maxLength={BATAS.namaOrang} autoComplete="off" required />
             </Field>
-            <Field id="kontak_peminjam" label="Nomor kontak" error={fe("kontak_peminjam")}>
-              <TextInput id="kontak_peminjam" name="kontak_peminjam" type="tel" inputMode="tel" placeholder="08xxxxxxxxxx" required />
+            <Field
+              id="kontak_peminjam"
+              label="Nomor kontak"
+              error={fe("kontak_peminjam")}
+              hint={`Hanya angka, ${BATAS.kontakMin}–${BATAS.kontakMax} digit, diawali 0 atau 62.`}
+            >
+              <TextInput
+                id="kontak_peminjam"
+                name="kontak_peminjam"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder="08xxxxxxxxxx"
+                maxLength={BATAS.kontakMax}
+                value={kontak}
+                onChange={(e) => setKontak(hanyaAngka(e.target.value).slice(0, BATAS.kontakMax))}
+                autoComplete="off"
+                required
+              />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field id="divisi_peminjam" label="Divisi" error={fe("divisi_peminjam")}>
-                <TextInput id="divisi_peminjam" name="divisi_peminjam" required />
+                <TextInput id="divisi_peminjam" name="divisi_peminjam" maxLength={BATAS.divisi} required />
               </Field>
               <Field id="ruangan" label="Ruangan" error={fe("ruangan")}>
-                <TextInput id="ruangan" name="ruangan" required />
+                <TextInput id="ruangan" name="ruangan" maxLength={BATAS.ruangan} required />
               </Field>
             </div>
-            <Field id="keperluan" label="Keperluan" error={fe("keperluan")}>
-              <Textarea id="keperluan" name="keperluan" rows={3} required />
+            <Field
+              id="keperluan"
+              label="Keperluan"
+              error={fe("keperluan")}
+              hint={`${keperluan.length}/${BATAS.keperluan} karakter`}
+            >
+              <Textarea
+                id="keperluan"
+                name="keperluan"
+                rows={3}
+                maxLength={BATAS.keperluan}
+                value={keperluan}
+                onChange={(e) => setKeperluan(e.target.value)}
+                required
+              />
             </Field>
           </div>
         </Card>
 
         <Card>
           <h2 className="text-base font-semibold text-gray-900">Jadwal (WITA)</h2>
+          <p className="-mt-2 text-xs text-gray-500">
+            Lama peminjaman maksimal {BATAS.durasiMaksHari} hari. Tanggal keluar paling lama {BATAS.mundurMaksHari} hari ke belakang.
+          </p>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="tgl_peminjaman" label="Tanggal & jam keluar" error={fe("tgl_peminjaman")}>
-              <TextInput id="tgl_peminjaman" name="tgl_peminjaman" type="datetime-local" defaultValue={defaultKeluar} required />
-            </Field>
-            <Field id="tgl_rencana_kembali" label="Rencana kembali" error={fe("tgl_rencana_kembali")}>
-              <TextInput id="tgl_rencana_kembali" name="tgl_rencana_kembali" type="datetime-local" defaultValue={defaultKembali} required />
-            </Field>
+            <div>
+              <Label htmlFor="tgl_peminjaman" className="mb-1.5 block">Tanggal & jam keluar</Label>
+              <DateTimeField id="tgl_peminjaman" name="tgl_peminjaman" defaultValue={defaultKeluar} required error={fe("tgl_peminjaman")} />
+            </div>
+            <div>
+              <Label htmlFor="tgl_rencana_kembali" className="mb-1.5 block">Rencana kembali</Label>
+              <DateTimeField
+                id="tgl_rencana_kembali"
+                name="tgl_rencana_kembali"
+                defaultValue={defaultKembali}
+                required
+                error={fe("tgl_rencana_kembali")}
+              />
+            </div>
           </div>
         </Card>
       </div>
@@ -177,11 +209,12 @@ export function PeminjamanForm({
               <Label htmlFor="jumlah" className="mb-1.5 block">Jumlah</Label>
               <TextInput
                 id="jumlah"
-                type="number"
-                min={1}
-                max={50}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={2}
                 value={jumlah}
-                onChange={(e) => setJumlah(e.target.value)}
+                onChange={(e) => setJumlah(hanyaAngka(e.target.value).slice(0, 2))}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
@@ -209,9 +242,7 @@ export function PeminjamanForm({
                   <TableHeadCell>Nama Barang</TableHeadCell>
                   <TableHeadCell>Kategori</TableHeadCell>
                   <TableHeadCell>Ketersediaan</TableHeadCell>
-                  <TableHeadCell>
-                    <span className="sr-only">Aksi</span>
-                  </TableHeadCell>
+                  <TableHeadCell className="text-right">Aksi</TableHeadCell>
                 </TableRow>
               </TableHead>
               <TableBody className="divide-y">
@@ -224,51 +255,28 @@ export function PeminjamanForm({
                 )}
                 {units.map((u) => (
                   <TableRow key={u.id} className="bg-white">
-                    <TableCell className="font-mono font-medium text-gray-900">{u.kode_aset}</TableCell>
+                    <TableCell className="font-mono font-medium whitespace-nowrap text-gray-900">{u.kode_aset}</TableCell>
                     <TableCell>{u.nama_aset}</TableCell>
                     <TableCell>{u.kategori_nama}</TableCell>
                     <TableCell>
                       <Badge color="success" className="w-fit">Tersedia</Badge>
                     </TableCell>
                     <TableCell>
-                      {ganti?.id === u.id ? (
-                        <div className="flex items-center gap-2">
-                          {ganti.opsi === null ? (
-                            <Spinner size="sm" />
-                          ) : ganti.opsi.length === 0 ? (
-                            <span className="text-xs text-gray-500">Tidak ada unit lain yang tersedia.</span>
-                          ) : (
-                            <Select
-                              sizing="sm"
-                              defaultValue=""
-                              onChange={(e) => pilihGanti(u.id, Number(e.target.value))}
-                              aria-label={`Ganti ${u.kode_aset}`}
-                            >
-                              <option value="" disabled>Pilih unit pengganti</option>
-                              {ganti.opsi.map((o) => (
-                                <option key={o.id} value={o.id}>{o.kode_aset} — {o.nama_aset}</option>
-                              ))}
-                            </Select>
-                          )}
-                          <Button size="xs" color="light" type="button" onClick={() => setGanti(null)}>Batal</Button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-end gap-2">
-                          <Button size="xs" color="light" type="button" onClick={() => bukaGanti(u)}>
-                            <HiOutlineArrowsRightLeft className="me-1 h-4 w-4" />
-                            Ganti
-                          </Button>
-                          <Button
-                            size="xs"
-                            color="red"
-                            type="button"
-                            onClick={() => setUnits((prev) => prev.filter((x) => x.id !== u.id))}
-                          >
-                            <HiOutlineTrash className="me-1 h-4 w-4" />
-                            Hapus
-                          </Button>
-                        </div>
-                      )}
+                      <div className="flex justify-end gap-2 whitespace-nowrap">
+                        <Button size="xs" color="light" type="button" onClick={() => setGanti(u)}>
+                          <HiOutlineArrowsRightLeft className="me-1 h-4 w-4" />
+                          Ganti
+                        </Button>
+                        <Button
+                          size="xs"
+                          color="red"
+                          type="button"
+                          onClick={() => setUnits((prev) => prev.filter((x) => x.id !== u.id))}
+                        >
+                          <HiOutlineTrash className="me-1 h-4 w-4" />
+                          Hapus
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -295,7 +303,88 @@ export function PeminjamanForm({
           </Button>
         </div>
       </div>
+
+      {ganti && (
+        <GantiDraftModal
+          unit={ganti}
+          kecuali={units.map((u) => u.id)}
+          onClose={() => setGanti(null)}
+          onPilih={(baru) => {
+            setUnits((prev) => prev.map((u) => (u.id === ganti.id ? baru : u)));
+            setGanti(null);
+          }}
+        />
+      )}
     </form>
+  );
+}
+
+/** Modal Ganti: pilih unit lain yang tersedia di kategori yang sama (aturan 6.1). */
+function GantiDraftModal({
+  unit,
+  kecuali,
+  onClose,
+  onPilih,
+}: {
+  unit: UnitTersedia;
+  kecuali: number[];
+  onClose: () => void;
+  onPilih: (baru: UnitTersedia) => void;
+}) {
+  const [opsi, setOpsi] = useState<UnitTersedia[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [pilihan, setPilihan] = useState("");
+  const [kecualiAwal] = useState(kecuali);
+
+  useEffect(() => {
+    let aktif = true;
+    opsiGantiUnit(unit.kategori_id, kecualiAwal).then((res) => {
+      if (!aktif) return;
+      if (res.ok) setOpsi(res.data ?? []);
+      else setError(res.error);
+    });
+    return () => {
+      aktif = false;
+    };
+  }, [unit.kategori_id, kecualiAwal]);
+
+  return (
+    <Modal show size="md" onClose={onClose} dismissible>
+      <ModalHeader>Ganti Unit {unit.kode_aset}</ModalHeader>
+      <ModalBody>
+        {error && <Alert color="failure" className="mb-4">{error}</Alert>}
+        <Label htmlFor="unit_pengganti" className="mb-1.5 block">Unit pengganti ({unit.kategori_nama})</Label>
+        {opsi === null && !error ? (
+          <div className="flex items-center gap-2 text-sm text-gray-500"><Spinner size="sm" /> Memuat unit tersedia...</div>
+        ) : opsi && opsi.length === 0 ? (
+          <p className="text-sm text-gray-500">Tidak ada unit lain yang tersedia di kategori ini.</p>
+        ) : (
+          <Select
+            id="unit_pengganti"
+            aria-label={`Ganti ${unit.kode_aset}`}
+            value={pilihan}
+            onChange={(e) => setPilihan(e.target.value)}
+          >
+            <option value="" disabled>Pilih unit pengganti</option>
+            {(opsi ?? []).map((o) => (
+              <option key={o.id} value={o.id}>{o.kode_aset} — {o.nama_aset}</option>
+            ))}
+          </Select>
+        )}
+      </ModalBody>
+      <ModalFooter className="justify-end">
+        <Button color="alternative" onClick={onClose}>Batal</Button>
+        <Button
+          disabled={!pilihan}
+          onClick={() => {
+            const baru = opsi?.find((o) => o.id === Number(pilihan));
+            if (baru) onPilih(baru);
+          }}
+        >
+          Ganti Unit
+        </Button>
+      </ModalFooter>
+    </Modal>
   );
 }
 
@@ -303,18 +392,24 @@ function Field({
   id,
   label,
   error,
+  hint,
   children,
 }: {
   id: string;
   label: string;
   error?: string;
+  hint?: string;
   children: React.ReactNode;
 }) {
   return (
     <div>
       <Label htmlFor={id} className="mb-1.5 block">{label}</Label>
       {children}
-      {error && <HelperText color="failure">{error}</HelperText>}
+      {error ? (
+        <HelperText color="failure">{error}</HelperText>
+      ) : (
+        hint && <HelperText className="text-xs text-gray-500">{hint}</HelperText>
+      )}
     </div>
   );
 }

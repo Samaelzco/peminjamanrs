@@ -1,17 +1,21 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Alert, Button, HelperText, Label, Spinner, Textarea, TextInput } from "flowbite-react";
+import { Alert, Button, HelperText, Label, Spinner, Textarea } from "flowbite-react";
+import { DateTimeField } from "@/components/datetime-field";
+import { BATAS } from "@/lib/validation";
 import { perpanjangPeminjaman } from "../../actions";
 
 export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId: number; defaultTanggal: string }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[] | undefined>>({});
+  const [alasan, setAlasan] = useState("");
 
   return (
     <form
       className="space-y-4"
+      noValidate
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
@@ -21,7 +25,7 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
           const res = await perpanjangPeminjaman({
             peminjamanId,
             tgl_rencana_kembali: String(fd.get("tgl_rencana_kembali") ?? ""),
-            alasan: String(fd.get("alasan") ?? ""),
+            alasan,
           });
           if (res && !res.ok) {
             setError(res.error);
@@ -33,14 +37,30 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
       {error && <Alert color="failure">{error}</Alert>}
       <div>
         <Label htmlFor="tgl_rencana_kembali" className="mb-1.5 block">Rencana kembali baru (WITA)</Label>
-        <TextInput id="tgl_rencana_kembali" name="tgl_rencana_kembali" type="datetime-local" defaultValue={defaultTanggal} required />
-        {fieldErrors.tgl_rencana_kembali && <HelperText color="failure">{fieldErrors.tgl_rencana_kembali[0]}</HelperText>}
+        <DateTimeField
+          id="tgl_rencana_kembali"
+          name="tgl_rencana_kembali"
+          defaultValue={defaultTanggal}
+          required
+          error={fieldErrors.tgl_rencana_kembali?.[0]}
+          hint={`Format dd/mm/yyyy jj:mm (24 jam, WITA). Maksimal ${BATAS.durasiMaksHari} hari dari sekarang.`}
+        />
       </div>
       <div>
         <Label htmlFor="alasan" className="mb-1.5 block">Alasan perpanjangan</Label>
-        <Textarea id="alasan" name="alasan" rows={3} required maxLength={300} />
+        <Textarea
+          id="alasan"
+          name="alasan"
+          rows={3}
+          required
+          maxLength={BATAS.alasan}
+          value={alasan}
+          onChange={(e) => setAlasan(e.target.value)}
+          color={fieldErrors.alasan ? "failure" : undefined}
+        />
         <HelperText color={fieldErrors.alasan ? "failure" : undefined}>
-          {fieldErrors.alasan?.[0] ?? "Alasan ditambahkan ke keperluan pada peminjaman baru."}
+          {fieldErrors.alasan?.[0] ??
+            `${alasan.length}/${BATAS.alasan} karakter. Alasan ditambahkan ke keperluan pada peminjaman baru.`}
         </HelperText>
       </div>
       <div className="flex justify-end">

@@ -5,6 +5,8 @@ import { useTransition } from "react";
 import { Button, Label, Select, Spinner, TextInput } from "flowbite-react";
 import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { STATUS_PEMINJAMAN, STATUS_PEMINJAMAN_LIST } from "@/lib/labels";
+import { DateTimeField } from "@/components/datetime-field";
+import { BATAS } from "@/lib/validation";
 
 type Value = { q: string; status: string; dari: string; sampai: string };
 
@@ -41,6 +43,7 @@ export function RiwayatFilters({ value }: { value: Value }) {
           name="q"
           defaultValue={value.q}
           placeholder="Kode, nama peminjam, divisi, kode aset"
+          maxLength={BATAS.cari}
           icon={HiOutlineMagnifyingGlass}
         />
       </div>
@@ -55,13 +58,13 @@ export function RiwayatFilters({ value }: { value: Value }) {
       </div>
       <div>
         <Label htmlFor="dari" className="mb-1.5 block">Tanggal keluar dari</Label>
-        <TextInput id="dari" name="dari" type="date" defaultValue={value.dari} />
+        <DateTimeField id="dari" name="dari" tanggalSaja defaultValue={value.dari} hint={null} />
       </div>
       <div>
         <Label htmlFor="sampai" className="mb-1.5 block">Sampai</Label>
-        <TextInput id="sampai" name="sampai" type="date" defaultValue={value.sampai} />
+        <DateTimeField id="sampai" name="sampai" tanggalSaja defaultValue={value.sampai} hint={null} />
       </div>
-      <div className="flex items-end gap-2">
+      <div className="flex items-start gap-2 pt-7">
         <Button type="submit" disabled={pending}>
           {pending ? <Spinner size="sm" /> : "Terapkan"}
         </Button>

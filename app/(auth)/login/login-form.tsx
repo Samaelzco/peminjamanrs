@@ -21,6 +21,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
           name="email"
           type="email"
           autoComplete="username"
+          maxLength={254}
           defaultValue={state.email}
           required
         />
@@ -34,6 +35,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
           name="password"
           type="password"
           autoComplete="current-password"
+          maxLength={72}
           required
         />
       </div>

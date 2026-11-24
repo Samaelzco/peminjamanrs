@@ -11,6 +11,9 @@ import {
   type ActionResult,
 } from "@/lib/action";
 import { witaInputToIso } from "@/lib/datetime";
+import { BATAS, namaOrang, nomorKontak, teks } from "@/lib/validation";
+
+const HARI_MS = 24 * 3600_000;
 import { createClient } from "@/lib/supabase/server";
 
 export type UnitTersedia = {
@@ -35,7 +38,11 @@ export async function ambilUnit(
     const parsed = z
       .object({
         kategoriId: idSchema,
-        jumlah: z.coerce.number().int("Jumlah harus bilangan bulat.").min(1, "Jumlah minimal 1.").max(50),
+        jumlah: z.coerce
+          .number("Jumlah harus angka.")
+          .int("Jumlah harus bilangan bulat.")
+          .min(1, "Jumlah minimal 1.")
+          .max(BATAS.jumlahUnitMax, `Jumlah maksimal ${BATAS.jumlahUnitMax}.`),
         kecuali: idsSchema,
       })
       .safeParse({ kategoriId, jumlah, kecuali });
@@ -69,37 +76,51 @@ export async function opsiGantiUnit(
   });
 }
 
+/** Tanggal WITA (yyyy-MM-ddTHH:mm) → ISO; tambahkan issue bila tidak valid. */
+function keIso(v: string, ctx: z.RefinementCtx, path: string): string {
+  try {
+    return witaInputToIso(v);
+  } catch {
+    ctx.addIssue({ code: "custom", message: "Tanggal/jam tidak valid. Format: dd/mm/yyyy jj:mm.", path: [path] });
+    return z.NEVER;
+  }
+}
+
 const peminjamanSchema = z
   .object({
-    nama_peminjam: z.string().trim().min(1, "Nama peminjam wajib diisi.").max(120),
-    kontak_peminjam: z
-      .string()
-      .trim()
-      .min(1, "Nomor kontak wajib diisi.")
-      .max(30)
-      .regex(/^[0-9+\-\s()]+$/, "Nomor kontak hanya boleh berisi angka, spasi, +, -, ( )."),
-    divisi_peminjam: z.string().trim().min(1, "Divisi wajib diisi.").max(120),
-    ruangan: z.string().trim().min(1, "Ruangan wajib diisi.").max(120),
-    keperluan: z.string().trim().min(1, "Keperluan wajib diisi.").max(500),
+    nama_peminjam: namaOrang("Nama peminjam"),
+    kontak_peminjam: nomorKontak,
+    divisi_peminjam: teks("Divisi", BATAS.divisi),
+    ruangan: teks("Ruangan", BATAS.ruangan),
+    keperluan: teks("Keperluan", BATAS.keperluan),
     tgl_peminjaman: z.string().min(1, "Tanggal keluar wajib diisi."),
     tgl_rencana_kembali: z.string().min(1, "Tanggal rencana kembali wajib diisi."),
     aset_ids: z.array(idSchema).min(1, "Tambahkan minimal satu unit.").max(200),
   })
-  .transform((v, ctx) => {
-    try {
-      return {
-        ...v,
-        tgl_peminjaman: witaInputToIso(v.tgl_peminjaman),
-        tgl_rencana_kembali: witaInputToIso(v.tgl_rencana_kembali),
-      };
-    } catch {
-      ctx.addIssue({ code: "custom", message: "Format tanggal tidak valid.", path: ["tgl_peminjaman"] });
-      return z.NEVER;
+  .transform((v, ctx) => ({
+    ...v,
+    tgl_peminjaman: keIso(v.tgl_peminjaman, ctx, "tgl_peminjaman"),
+    tgl_rencana_kembali: keIso(v.tgl_rencana_kembali, ctx, "tgl_rencana_kembali"),
+  }))
+  .superRefine((v, ctx) => {
+    const keluar = new Date(v.tgl_peminjaman).getTime();
+    const kembali = new Date(v.tgl_rencana_kembali).getTime();
+    if (keluar < Date.now() - BATAS.mundurMaksHari * HARI_MS) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["tgl_peminjaman"],
+        message: `Tanggal keluar paling lama ${BATAS.mundurMaksHari} hari ke belakang.`,
+      });
     }
-  })
-  .refine((v) => new Date(v.tgl_rencana_kembali) > new Date(v.tgl_peminjaman), {
-    message: "Rencana kembali harus setelah tanggal keluar.",
-    path: ["tgl_rencana_kembali"],
+    if (kembali <= keluar) {
+      ctx.addIssue({ code: "custom", path: ["tgl_rencana_kembali"], message: "Rencana kembali harus setelah tanggal keluar." });
+    } else if (kembali - keluar > BATAS.durasiMaksHari * HARI_MS) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["tgl_rencana_kembali"],
+        message: `Lama peminjaman maksimal ${BATAS.durasiMaksHari} hari.`,
+      });
+    }
   });
 
 export type PeminjamanInput = z.input<typeof peminjamanSchema>;
@@ -134,7 +155,9 @@ export async function batalkanPeminjaman(id: number, alasan: string): Promise<Ac
   return runAction(async () => {
     await authorize("peminjaman.cancel");
     const pid = idSchema.parse(id);
-    const alasanBersih = z.string().trim().max(300).parse(alasan ?? "");
+    const cek = z.string().trim().max(BATAS.alasan, `Alasan maksimal ${BATAS.alasan} karakter.`).safeParse(alasan ?? "");
+    if (!cek.success) return { ok: false, error: cek.error.issues[0].message };
+    const alasanBersih = cek.data;
 
     const supabase = await createClient();
     const { error } = await supabase.rpc("batalkan_peminjaman", {
@@ -151,7 +174,7 @@ export async function batalkanPeminjaman(id: number, alasan: string): Promise<Ac
 const perpanjangSchema = z.object({
   peminjamanId: idSchema,
   tgl_rencana_kembali: z.string().min(1, "Tanggal rencana kembali baru wajib diisi."),
-  alasan: z.string().trim().min(1, "Alasan perpanjangan wajib diisi.").max(300),
+  alasan: teks("Alasan perpanjangan", BATAS.alasan),
 });
 
 export async function perpanjangPeminjaman(input: z.input<typeof perpanjangSchema>): Promise<ActionResult> {
@@ -164,7 +187,18 @@ export async function perpanjangPeminjaman(input: z.input<typeof perpanjangSchem
     try {
       tgl = witaInputToIso(parsed.data.tgl_rencana_kembali);
     } catch {
-      return { ok: false, error: "Format tanggal tidak valid." };
+      return { ok: false, error: "Periksa kembali isian Anda.", fieldErrors: { tgl_rencana_kembali: ["Tanggal/jam tidak valid. Format: dd/mm/yyyy jj:mm."] } };
+    }
+    const t = new Date(tgl).getTime();
+    if (t <= Date.now()) {
+      return { ok: false, error: "Periksa kembali isian Anda.", fieldErrors: { tgl_rencana_kembali: ["Rencana kembali baru harus setelah waktu sekarang."] } };
+    }
+    if (t > Date.now() + BATAS.durasiMaksHari * HARI_MS) {
+      return {
+        ok: false,
+        error: "Periksa kembali isian Anda.",
+        fieldErrors: { tgl_rencana_kembali: [`Perpanjangan maksimal ${BATAS.durasiMaksHari} hari dari sekarang.`] },
+      };
     }
 
     const supabase = await createClient();
