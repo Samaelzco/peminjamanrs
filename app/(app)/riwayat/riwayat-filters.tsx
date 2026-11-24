@@ -7,6 +7,15 @@ import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { STATUS_PEMINJAMAN, STATUS_PEMINJAMAN_LIST } from "@/lib/labels";
 import { DateTimeField } from "@/components/datetime-field";
 import { BATAS } from "@/lib/validation";
+import { TZDate } from "@date-fns/tz";
+import { endOfMonth, format, startOfMonth, subMonths } from "date-fns";
+import { TIMEZONE } from "@/lib/datetime";
+
+/** Rentang satu bulan kalender (WITA): 0 = bulan ini, 1 = bulan lalu. */
+function rentangBulan(mundur: number) {
+  const bulan = subMonths(TZDate.tz(TIMEZONE), mundur);
+  return { dari: format(startOfMonth(bulan), "yyyy-MM-dd"), sampai: format(endOfMonth(bulan), "yyyy-MM-dd") };
+}
 
 type Value = { q: string; status: string; dari: string; sampai: string };
 
@@ -76,6 +85,24 @@ export function RiwayatFilters({ value }: { value: Value }) {
         >
           Reset
         </Button>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-sm md:col-span-2 xl:col-span-5">
+        <span className="text-gray-500">Periode cepat:</span>
+        {[
+          { label: "Bulan ini", mundur: 0 },
+          { label: "Bulan lalu", mundur: 1 },
+        ].map((p) => (
+          <Button
+            key={p.label}
+            type="button"
+            size="xs"
+            color="light"
+            disabled={pending}
+            onClick={() => apply({ ...value, ...rentangBulan(p.mundur) })}
+          >
+            {p.label}
+          </Button>
+        ))}
       </div>
     </form>
   );

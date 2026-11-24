@@ -19,9 +19,10 @@
     "test:pemasangan": "tsx --env-file=.env.local scripts/tests/pemasangan.test.ts",
     "test:perpanjangan": "tsx --env-file=.env.local scripts/tests/perpanjangan.test.ts",
     "test:koreksi": "tsx --env-file=.env.local scripts/tests/koreksi.test.ts",
+    "test:ekspor": "tsx --env-file=.env.local scripts/tests/ekspor.test.ts",
     "test:riwayat": "tsx --env-file=.env.local scripts/tests/riwayat.test.ts",
     "test:db": "npm run test:rbac && npm run test:master && npm run test:peminjaman && npm run test:pemasangan && npm run test:perpanjangan && npm run test:koreksi",
-    "test:web": "npm run test:http && npm run test:riwayat",
+    "test:web": "npm run test:http && npm run test:riwayat && npm run test:ekspor",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -29,6 +30,7 @@
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.2",
     "date-fns": "^4.4.0",
+    "exceljs": "^4.4.0",
     "flowbite-react": "^0.12.17",
     "next": "16.4.6",
     "react": "19.3.0",
