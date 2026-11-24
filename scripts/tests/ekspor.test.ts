@@ -119,9 +119,14 @@ async function main() {
       const selisihJam = (keluar.getTime() - new Date(p!.tgl_peminjaman).getTime()) / 3600_000;
       return Math.abs(selisihJam - 8) < 0.01 || `selisih ${selisihJam}`;
     });
-    await check("Sarpras (riwayat.view) juga bisa mengunduh", async () => {
+    await check("Sarpras tidak bisa mengunduh (403) dan tombol tidak tampil", async () => {
       const rs = await fetch(BASE + url, { headers: { cookie: cs } });
-      return rs.status === 200 || `status ${rs.status}`;
+      const html = await (await fetch(BASE + "/riwayat", { headers: { cookie: cs } })).text();
+      return (rs.status === 403 && !html.includes("Unduh Rekap")) || `status ${rs.status}`;
+    });
+    await check("Tombol Unduh Rekap tampil untuk Admin", async () => {
+      const html = await (await fetch(BASE + "/riwayat", { headers: { cookie: ca } })).text();
+      return html.includes("Unduh Rekap (Excel)") || "tidak tampil";
     });
   } finally {
     await bersihkan(dibuat, [u1.kode_aset, u2.kode_aset]);

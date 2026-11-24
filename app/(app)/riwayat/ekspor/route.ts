@@ -16,7 +16,7 @@ const tglTeks = (yyyyMmDd: string) => yyyyMmDd.split("-").reverse().join("/");
 export async function GET(request: NextRequest) {
   const user = await getCurrentUser();
   if (!user) return new Response("Sesi berakhir. Silakan login kembali.", { status: 401 });
-  if (!user.permissions.includes("riwayat.view")) return new Response("Akses ditolak.", { status: 403 });
+  if (!user.permissions.includes("laporan.export")) return new Response("Akses ditolak.", { status: 403 });
 
   const filter = parseFilterRiwayat(request.nextUrl.searchParams);
   const sekarang = new Date();

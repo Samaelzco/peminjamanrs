@@ -52,11 +52,13 @@ export default async function RiwayatPage({ searchParams }: PageProps<"/riwayat"
         title="Riwayat Peminjaman"
         description="Semua peminjaman, termasuk yang dibatalkan dan selesai."
         actions={
-          // Tautan biasa (bukan <Link>) karena tujuannya file unduhan dari route handler.
-          <Button as="a" href={`/riwayat/ekspor${ekspor ? `?${ekspor}` : ""}`} color="light">
-            <HiOutlineArrowDownTray className="me-1.5 h-4 w-4" />
-            Unduh Rekap (Excel)
-          </Button>
+          user.permissions.includes("laporan.export") && (
+            // Tautan biasa (bukan <Link>) karena tujuannya file unduhan dari route handler.
+            <Button as="a" href={`/riwayat/ekspor${ekspor ? `?${ekspor}` : ""}`} color="light">
+              <HiOutlineArrowDownTray className="me-1.5 h-4 w-4" />
+              Unduh Rekap (Excel)
+            </Button>
+          )
         }
       />
       <RiwayatFilters value={{ q, status: status ?? "", dari: dari ?? "", sampai: sampai ?? "" }} />

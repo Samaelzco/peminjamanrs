@@ -23,6 +23,7 @@ export const PERMISSIONS = [
   "pemasangan.create",
   "pengembalian.create",
   "riwayat.view",
+  "laporan.export",
   "debug.reset",
 ] as const;
 

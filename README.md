@@ -77,7 +77,7 @@ Uji membuat akun sementara dan data transaksi, lalu membersihkannya kembali (ase
 - **Sesi dibaca sekali per request:** `proxy.ts` membaca profil + permission lalu meneruskannya lewat header request
   internal `x-peminjaman-akses` (header kiriman klien selalu dibuang). `getCurrentUser()` memakainya bila `id`-nya cocok
   dengan JWT, sehingga layout/halaman/server action tidak mengulang query. Notifikasi dimuat dalam `Suspense` terpisah.
-- **Unduh rekap (Excel)** di halaman Riwayat (`/riwayat/ekspor`, permission `riwayat.view`): memakai filter yang
+- **Unduh rekap (Excel)** di halaman Riwayat (`/riwayat/ekspor`, permission `laporan.export`, hanya Administrasi): memakai filter yang
   sedang aktif (periode tanggal keluar, status, pencarian; tombol cepat Bulan ini / Bulan lalu). Isi: sheet
   Ringkasan (jumlah per status, persentase & durasi terlambat, per divisi, per kategori), Riwayat, Keterlambatan
   (urut durasi terlambat terlama), dan Per Unit (berapa kali dipinjam, terlambat, kembali rusak/hilang). Keterlambatan

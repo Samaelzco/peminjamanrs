@@ -12,6 +12,7 @@ const RUTE: { pola: RegExp; permission: Permission[] }[] = [
   { pola: /^\/peminjaman\/\d+\/perpanjang\/?$/, permission: ["peminjaman.extend"] },
   { pola: /^\/peminjaman\/\d+\/ubah\/?$/, permission: ["peminjaman.update"] },
   { pola: /^\/peminjaman\/\d+\/?$/, permission: ["peminjaman.view", "riwayat.view"] },
+  { pola: /^\/riwayat\/ekspor\/?$/, permission: ["laporan.export"] },
   { pola: /^\/riwayat(\/|$)/, permission: ["riwayat.view"] },
   { pola: /^\/aset(\/|$)/, permission: ["aset.view"] },
   { pola: /^\/kategori(\/|$)/, permission: ["kategori.view"] },
