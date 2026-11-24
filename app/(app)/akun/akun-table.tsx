@@ -201,7 +201,7 @@ function AkunFormModal({
   return (
     <Modal show size="md" onClose={onClose} dismissible>
       <ModalHeader>{mode === "create" ? "Tambah Akun" : "Edit Akun"}</ModalHeader>
-      <form action={submit}>
+      <form onSubmit={(e) => { e.preventDefault(); submit(new FormData(e.currentTarget)); }}>
         <ModalBody>
           {action.result && !action.result.ok && <ResultAlert result={action.result} />}
           <div className="space-y-4">

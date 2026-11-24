@@ -22,3 +22,16 @@ export const KONDISI: Record<"baik" | "rusak" | "hilang", { label: string; color
 
 export const STATUS_ASET_LIST = Object.keys(STATUS_ASET) as StatusAset[];
 export const KONDISI_ASET_LIST: KondisiAset[] = ["baik", "rusak"];
+
+export type StatusPeminjaman = Enums["status_peminjaman"];
+export type KondisiMasuk = Enums["kondisi_masuk"];
+
+export const STATUS_PEMINJAMAN: Record<StatusPeminjaman, { label: string; color: BadgeColor }> = {
+  diajukan: { label: "Diajukan", color: "warning" },
+  dipinjam: { label: "Dipinjam", color: "info" },
+  terlambat: { label: "Terlambat", color: "failure" },
+  dibatalkan: { label: "Dibatalkan", color: "gray" },
+  selesai: { label: "Selesai", color: "success" },
+};
+
+export const STATUS_PEMINJAMAN_LIST = Object.keys(STATUS_PEMINJAMAN) as StatusPeminjaman[];

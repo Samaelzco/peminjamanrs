@@ -81,6 +81,47 @@ async function main() {
       const r = await get("/kategori", cs);
       return (r.status === 200 && (await r.text()).includes("Proyektor")) || `status ${r.status}`;
     });
+    await check("Admin bisa membuka Peminjaman Baru; Sarpras → 403", async () => {
+      const ra = await get("/peminjaman/baru", ca);
+      const rs = await get("/peminjaman/baru", cs);
+      const ha = await ra.text();
+      const hs = await rs.text();
+      return (ha.includes("Tambah Unit") && hs.includes("Akses ditolak")) || `admin ${ra.status}, sarpras ${rs.status}`;
+    });
+    await check("Detail peminjaman tampil (Admin: Batalkan, Sarpras: Pemasangan)", async () => {
+      const { signIn } = await import("./helpers");
+      const a = await signIn(adm.email, adm.password);
+      const { data: lpt } = await a.from("kategori").select("id").eq("kode_prefix", "WCM").single();
+      const { data: unit } = await a.rpc("ambil_unit_tersedia", { p_kategori_id: lpt!.id, p_jumlah: 1 });
+      const now = Date.now();
+      const { data, error } = await a.rpc("buat_peminjaman", {
+        p_nama_peminjam: "Uji HTTP", p_divisi_peminjam: "IT", p_kontak_peminjam: "0812", p_ruangan: "R1",
+        p_keperluan: "Uji", p_tgl_peminjaman: new Date(now).toISOString(),
+        p_tgl_rencana_kembali: new Date(now + 3600_000).toISOString(), p_aset_ids: [unit![0].id],
+      });
+      if (error) return error.message;
+      const id = data![0].id;
+      try {
+        const ha = await (await get(`/peminjaman/${id}`, ca)).text();
+        const hs = await (await get(`/peminjaman/${id}`, cs)).text();
+        const ok =
+          ha.includes(data![0].kode_peminjaman) && ha.includes("Batalkan") && !ha.includes(">Pemasangan<") &&
+          hs.includes("Pemasangan") && !hs.includes("Batalkan") && hs.includes(unit![0].kode_aset) &&
+          hs.includes("Peminjaman diajukan");
+        return ok || JSON.stringify({
+          kode: ha.includes(data![0].kode_peminjaman), aBatal: ha.includes("Batalkan"), aPasang: ha.includes(">Pemasangan<"),
+          sPasang: hs.includes("Pemasangan"), sBatal: hs.includes("Batalkan"), sUnit: hs.includes(unit![0].kode_aset),
+          sLog: hs.includes("Peminjaman diajukan"),
+        });
+      } finally {
+        await admin.from("peminjaman").delete().eq("id", id);
+      }
+    });
+    await check("Detail aset menampilkan riwayat peminjaman", async () => {
+      const { data: u } = await admin.from("aset").select("id").eq("kode_aset", "LPT-001").single();
+      const r = await get(`/aset/${u!.id}`, cs);
+      return (r.status === 200 && (await r.text()).includes("Riwayat Peminjaman")) || `status ${r.status}`;
+    });
     await check("User non_aktif dialihkan ke /login?error=nonaktif", async () => {
       await admin.from("staff_it").update({ status: "non_aktif" }).eq("id", sar.id);
       const r = await get("/", cs);

@@ -171,7 +171,7 @@ function RoleFormModal({
   return (
     <Modal show size="md" onClose={onClose} dismissible>
       <ModalHeader>{role ? "Edit Role" : "Tambah Role"}</ModalHeader>
-      <form action={submit}>
+      <form onSubmit={(e) => { e.preventDefault(); submit(new FormData(e.currentTarget)); }}>
         <ModalBody>
           {action.result && !action.result.ok && <ResultAlert result={action.result} />}
           <div className="space-y-4">

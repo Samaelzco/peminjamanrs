@@ -29,6 +29,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"detail_peminjaman": {
+                  Row: {
+                    "aset_id": number,"catatan": string | null,"id": number,"kondisi_keluar": Database["public"]['Enums']["kondisi_aset"] | null,"kondisi_masuk": Database["public"]['Enums']["kondisi_masuk"] | null,"peminjaman_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "aset_id": number,"catatan"?: string | null,"id"?: never,"kondisi_keluar"?: Database["public"]['Enums']["kondisi_aset"] | null,"kondisi_masuk"?: Database["public"]['Enums']["kondisi_masuk"] | null,"peminjaman_id": number
+                  }
+                  Update: {
+                    "aset_id"?: number,"catatan"?: string | null,"id"?: never,"kondisi_keluar"?: Database["public"]['Enums']["kondisi_aset"] | null,"kondisi_masuk"?: Database["public"]['Enums']["kondisi_masuk"] | null,"peminjaman_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "detail_peminjaman_aset_id_fkey"
+      columns: ["aset_id"]
+isOneToOne: false
+      referencedRelation: "aset"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "detail_peminjaman_peminjaman_id_fkey"
+      columns: ["peminjaman_id"]
+isOneToOne: false
+      referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"kategori": {
                   Row: {
                     "created_at": string,"id": number,"kode_prefix": string,"nama": string,"updated_at": string
@@ -42,6 +68,84 @@ isOneToOne: false
                   }
                   Relationships: [
                     
+                  ]
+                },"log_peminjaman": {
+                  Row: {
+                    "created_at": string,"id": number,"keterangan": string | null,"peminjaman_id": number,"staff_id": string | null,"status_baru": Database["public"]['Enums']["status_peminjaman"],"status_lama": Database["public"]['Enums']["status_peminjaman"] | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"keterangan"?: string | null,"peminjaman_id": number,"staff_id"?: string | null,"status_baru": Database["public"]['Enums']["status_peminjaman"],"status_lama"?: Database["public"]['Enums']["status_peminjaman"] | null
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"keterangan"?: string | null,"peminjaman_id"?: number,"staff_id"?: string | null,"status_baru"?: Database["public"]['Enums']["status_peminjaman"],"status_lama"?: Database["public"]['Enums']["status_peminjaman"] | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "log_peminjaman_peminjaman_id_fkey"
+      columns: ["peminjaman_id"]
+isOneToOne: false
+      referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "log_peminjaman_staff_id_fkey"
+      columns: ["staff_id"]
+isOneToOne: false
+      referencedRelation: "staff_it"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"notifikasi": {
+                  Row: {
+                    "created_at": string,"id": number,"peminjaman_id": number | null,"pesan": string,"sudah_dibaca": boolean,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: never,"peminjaman_id"?: number | null,"pesan": string,"sudah_dibaca"?: boolean,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: never,"peminjaman_id"?: number | null,"pesan"?: string,"sudah_dibaca"?: boolean,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notifikasi_peminjaman_id_fkey"
+      columns: ["peminjaman_id"]
+isOneToOne: false
+      referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "notifikasi_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "staff_it"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"peminjaman": {
+                  Row: {
+                    "created_at": string,"dicatat_oleh": string,"divisi_peminjam": string,"id": number,"keperluan": string,"kode_peminjaman": string,"kontak_peminjam": string,"nama_peminjam": string,"perpanjangan_dari": number | null,"ruangan": string,"status": Database["public"]['Enums']["status_peminjaman"],"tgl_peminjaman": string,"tgl_rencana_kembali": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"dicatat_oleh": string,"divisi_peminjam": string,"id"?: never,"keperluan": string,"kode_peminjaman"?: string,"kontak_peminjam": string,"nama_peminjam": string,"perpanjangan_dari"?: number | null,"ruangan": string,"status"?: Database["public"]['Enums']["status_peminjaman"],"tgl_peminjaman": string,"tgl_rencana_kembali": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"dicatat_oleh"?: string,"divisi_peminjam"?: string,"id"?: never,"keperluan"?: string,"kode_peminjaman"?: string,"kontak_peminjam"?: string,"nama_peminjam"?: string,"perpanjangan_dari"?: number | null,"ruangan"?: string,"status"?: Database["public"]['Enums']["status_peminjaman"],"tgl_peminjaman"?: string,"tgl_rencana_kembali"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "peminjaman_dicatat_oleh_fkey"
+      columns: ["dicatat_oleh"]
+isOneToOne: false
+      referencedRelation: "staff_it"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "peminjaman_perpanjangan_dari_fkey"
+      columns: ["perpanjangan_dari"]
+isOneToOne: true
+      referencedRelation: "peminjaman"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"permissions": {
                   Row: {
@@ -123,18 +227,53 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "has_permission":
+            "ambil_unit_tersedia":
+{ Args: { "p_jumlah": number,"p_kategori_id": number,"p_kecuali_aset"?: (number)[] }; Returns: {
+              "id": number,"kategori_id": number,"kategori_nama": string,"kode_aset": string,"nama_aset": string
+            }[]
+                           },
+"aset_terikat":
+{ Args: { "p_aset_id": number,"p_kecuali_peminjaman"?: number }; Returns: boolean
+                           },
+"aset_tersedia":
+{ Args: { "p_kategori_id": number,"p_kecuali_aset"?: (number)[] }; Returns: {
+              "id": number,"kategori_id": number,"kategori_nama": string,"kode_aset": string,"nama_aset": string
+            }[]
+                           },
+"batalkan_peminjaman":
+{ Args: { "p_alasan"?: string,"p_peminjaman_id": number }; Returns: undefined
+                           },
+"buat_peminjaman":
+{ Args: { "p_aset_ids": (number)[],"p_divisi_peminjam": string,"p_keperluan": string,"p_kontak_peminjam": string,"p_nama_peminjam": string,"p_ruangan": string,"p_tgl_peminjaman": string,"p_tgl_rencana_kembali": string }; Returns: {
+              "id": number,"kode_peminjaman": string
+            }[]
+                           },
+"has_permission":
 { Args: { "nama_permission": string }; Returns: boolean
                            },
 "is_active_user":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"kirim_notifikasi":
+{ Args: { "p_peminjaman_id": number,"p_permission": string,"p_pesan": string }; Returns: undefined
+                           },
 "my_permissions":
 { Args: Record<PropertyKey, never>; Returns: string[]
+                           },
+"nama_staff":
+{ Args: { "p_ids": (string)[] }; Returns: {
+              "id": string,"nama": string
+            }[]
+                           },
+"next_kode_peminjaman":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
+"wajib_permission":
+{ Args: { "p_permission": string }; Returns: undefined
                            }
           }
           Enums: {
-            "kondisi_aset": "baik"|"rusak","status_akun": "aktif"|"non_aktif","status_aset": "tersedia"|"dipinjam"|"dalam_perbaikan"|"hilang"
+            "kondisi_aset": "baik"|"rusak","kondisi_masuk": "baik"|"rusak"|"hilang","status_akun": "aktif"|"non_aktif","status_aset": "tersedia"|"dipinjam"|"dalam_perbaikan"|"hilang","status_peminjaman": "diajukan"|"dipinjam"|"terlambat"|"dibatalkan"|"selesai"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -250,7 +389,7 @@ export type CompositeTypes<
 export const Constants = {
   "public": {
           Enums: {
-            "kondisi_aset": ["baik", "rusak"],"status_akun": ["aktif", "non_aktif"],"status_aset": ["tersedia", "dipinjam", "dalam_perbaikan", "hilang"]
+            "kondisi_aset": ["baik", "rusak"],"kondisi_masuk": ["baik", "rusak", "hilang"],"status_akun": ["aktif", "non_aktif"],"status_aset": ["tersedia", "dipinjam", "dalam_perbaikan", "hilang"],"status_peminjaman": ["diajukan", "dipinjam", "terlambat", "dibatalkan", "selesai"]
           }
         }
 } as const

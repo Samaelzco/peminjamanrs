@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { forbidden, redirect } from "next/navigation";
+import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { Permission } from "@/lib/permissions";
 
@@ -15,6 +16,8 @@ export type CurrentUser = {
 
 /** User yang sedang login (null kalau belum login / non-aktif). Di-cache per request. */
 export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
+  // Sesi selalu dibaca saat request (validasi token memakai waktu sekarang).
+  await connection();
   const supabase = await createClient();
   const { data: auth } = await supabase.auth.getClaims();
   const uid = auth?.claims?.sub;
