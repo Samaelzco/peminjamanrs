@@ -20,7 +20,8 @@
     "test:perpanjangan": "tsx --env-file=.env.local scripts/tests/perpanjangan.test.ts",
     "test:riwayat": "tsx --env-file=.env.local scripts/tests/riwayat.test.ts",
     "test:db": "npm run test:rbac && npm run test:master && npm run test:peminjaman && npm run test:pemasangan && npm run test:perpanjangan",
-    "test:web": "npm run test:http && npm run test:riwayat"
+    "test:web": "npm run test:http && npm run test:riwayat",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@date-fns/tz": "^1.5.0",
@@ -36,6 +37,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "4.3.3",
     "@types/node": "^20",
     "@types/react": "^19",

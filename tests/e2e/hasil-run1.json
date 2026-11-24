@@ -1,0 +1,244 @@
+{
+  "waktu": "2026-11-24T10:32:10.564Z",
+  "pemetaan": {
+    "TRX-004": {
+      "id": 75,
+      "kode": "PJM-0001"
+    },
+    "TRX-001": {
+      "id": 76,
+      "kode": "PJM-0002"
+    },
+    "TRX-002": {
+      "id": 77,
+      "kode": "PJM-0003"
+    },
+    "TRX-003": {
+      "id": 78,
+      "kode": "PJM-0004"
+    },
+    "TRX-005": {
+      "id": 79,
+      "kode": "PJM-0005"
+    }
+  },
+  "hasil": [
+    {
+      "langkah": "0",
+      "harapan": "8 aset tersedia/baik, belum ada peminjaman",
+      "hasil": "Sesuai: 0 peminjaman, 8 aset tersedia/baik",
+      "status": "lulus"
+    },
+    {
+      "langkah": "1.1",
+      "harapan": "Laptop 1 + Webcam 1 → LPT-001 dan WCM-001",
+      "hasil": "Dipilih LPT-001, WCM-001",
+      "status": "lulus"
+    },
+    {
+      "langkah": "1.2",
+      "harapan": "Ganti LPT-001: dropdown hanya LPT-002, LPT-003; pilih LPT-002",
+      "hasil": "Opsi LPT-002, LPT-003; tabel sekarang LPT-002, WCM-001",
+      "status": "lulus"
+    },
+    {
+      "langkah": "1.3",
+      "harapan": "Simpan → diajukan; LPT-002 & WCM-001 tetap tersedia tapi terkunci; Sarpras dapat notifikasi",
+      "hasil": "PJM-0001 diajukan; aset tersedia tapi tidak muncul di pilihan (sisa laptop: LPT-001, LPT-003; webcam: WCM-002); notifikasi Sarpras: \"Peminjaman PJM-0001 (Ibu Sari Wulandari, R. Humas) menunggu pemasangan.\" (Notifikasi, 1 belum dibaca)",
+      "status": "lulus"
+    },
+    {
+      "langkah": "1.4",
+      "harapan": "Pemasangan 2 foto → dipinjam; LPT-002 & WCM-001 dipinjam; 1 pemasangan + 2 foto",
+      "hasil": "Status dipinjam; LPT-002 & WCM-001 dipinjam; 1 pemasangan, 2 foto",
+      "status": "lulus"
+    },
+    {
+      "langkah": "1.6",
+      "harapan": "Pengembalian Rusak tanpa catatan → ditolak (catatan wajib)",
+      "hasil": "UI: \"Lengkapi kondisi masuk (dan catatan untuk rusak/hilang): LPT-002.\". RPC langsung: \"Catatan wajib diisi untuk unit yang rusak atau hilang.\". Tidak ada pengembalian tersimpan.",
+      "status": "lulus"
+    },
+    {
+      "langkah": "1.5",
+      "harapan": "Pengembalian LPT-002 Rusak, WCM-001 Hilang, 3 foto → selesai; LPT-002 dalam_perbaikan/rusak; WCM-001 hilang; notifikasi Admin",
+      "hasil": "Selesai; LPT-002 dalam_perbaikan/rusak; WCM-001 hilang; 3 foto; notifikasi Admin: \"Pengembalian PJM-0001: LPT-002 rusak, WCM-001 hilang.\"",
+      "status": "lulus"
+    },
+    {
+      "langkah": "2.1",
+      "harapan": "Laptop 1 + Proyektor 1 → LPT-001 dan PRJ-001",
+      "hasil": "Dipilih LPT-001, PRJ-001",
+      "status": "lulus"
+    },
+    {
+      "langkah": "2.2",
+      "harapan": "Simpan → diajukan",
+      "hasil": "PJM-0002 diajukan",
+      "status": "lulus"
+    },
+    {
+      "langkah": "2.3",
+      "harapan": "Pemasangan 2 foto → dipinjam; LPT-001 & PRJ-001 dipinjam",
+      "hasil": "Dipinjam; LPT-001 & PRJ-001 dipinjam",
+      "status": "lulus"
+    },
+    {
+      "langkah": "2.4",
+      "harapan": "Pengembalian baik semua, 2 foto → selesai; LPT-001 & PRJ-001 tersedia/baik",
+      "hasil": "Selesai; LPT-001 & PRJ-001 tersedia/baik",
+      "status": "lulus"
+    },
+    {
+      "langkah": "3.1",
+      "harapan": "Proyektor 1 + Webcam 1 → PRJ-001 dan WCM-002",
+      "hasil": "Dipilih PRJ-001, WCM-002",
+      "status": "lulus"
+    },
+    {
+      "langkah": "3.2",
+      "harapan": "Simpan → diajukan",
+      "hasil": "PJM-0003 diajukan",
+      "status": "lulus"
+    },
+    {
+      "langkah": "3.3",
+      "harapan": "Pemasangan 2 foto → dipinjam",
+      "hasil": "Dipinjam",
+      "status": "lulus"
+    },
+    {
+      "langkah": "3.4",
+      "harapan": "Mundurkan rencana kembali 1 jam + jalankan fungsi cron → terlambat + notifikasi user peminjaman.view",
+      "hasil": "Status terlambat (1 ditandai); notifikasi ke Admin & Sarpras: \"Peminjaman PJM-0003 (Ns. Komang Ariani, Aula Diklat) terlambat. Rencana kembali 24/11/2026 17:31 WITA.\"",
+      "status": "lulus"
+    },
+    {
+      "langkah": "3.5",
+      "harapan": "Jalankan fungsi cron lagi → tidak ada notifikasi ganda",
+      "hasil": "0 peminjaman ditandai pada run kedua; notifikasi terlambat tetap 2 (1 per user)",
+      "status": "lulus"
+    },
+    {
+      "langkah": "3.6",
+      "harapan": "Dashboard Admin: muncul di daftar Terlambat, kartu Terlambat bertambah",
+      "hasil": "Kartu Terlambat 0 → 1; PJM-0003 ada di tabel Terlambat",
+      "status": "lulus"
+    },
+    {
+      "langkah": "4.1",
+      "harapan": "Perpanjang (3 hari, alasan) → peminjaman baru, perpanjangan_dari = TRX-002, data & unit sama, kondisi keluar disalin",
+      "hasil": "PJM-0004: perpanjangan_dari=PJM-0003, peminjam & ruangan sama, unit PRJ-001:baik, WCM-002:baik, keperluan \"Pelatihan BHD perawat secara hybrid — Perpanjangan: Pelatihan ditambah 2 sesi\"",
+      "status": "lulus"
+    },
+    {
+      "langkah": "4.2",
+      "harapan": "TRX-002 selesai tanpa pengembalian; TRX-003 dipinjam tanpa pemasangan",
+      "hasil": "TRX-002 selesai (0 pengembalian); TRX-003 dipinjam (0 pemasangan)",
+      "status": "lulus"
+    },
+    {
+      "langkah": "4.3",
+      "harapan": "PRJ-001 & WCM-002 tetap dipinjam",
+      "hasil": "PRJ-001 dipinjam, WCM-002 dipinjam",
+      "status": "lulus"
+    },
+    {
+      "langkah": "4.4",
+      "harapan": "Detail TRX-002 dan TRX-003 saling terhubung",
+      "hasil": "PJM-0003 → \"Diperpanjang menjadi PJM-0004\"; PJM-0004 → \"Perpanjangan dari PJM-0003\"",
+      "status": "lulus"
+    },
+    {
+      "langkah": "5.1",
+      "harapan": "Proyektor 3 → ditolak semua, 'hanya tersedia 2 unit Proyektor', tabel kosong",
+      "hasil": "Pesan: \"Hanya tersedia 2 unit Proyektor.\"; tabel kosong",
+      "status": "lulus"
+    },
+    {
+      "langkah": "5.2",
+      "harapan": "Proyektor 2 + Laptop 1 → PRJ-002, PRJ-003, LPT-001",
+      "hasil": "Dipilih PRJ-002, PRJ-003, LPT-001",
+      "status": "lulus"
+    },
+    {
+      "langkah": "5.3",
+      "harapan": "Simpan → diajukan",
+      "hasil": "PJM-0005 diajukan",
+      "status": "lulus"
+    },
+    {
+      "langkah": "5.4",
+      "harapan": "Tab lain: Proyektor 1 → ditolak (tidak ada proyektor tersedia); form tidak disimpan",
+      "hasil": "Pesan: \"Hanya tersedia 0 unit Proyektor.\"; form ditutup tanpa disimpan",
+      "status": "lulus"
+    },
+    {
+      "langkah": "5.5",
+      "harapan": "Riwayat aset LPT-001 menampilkan TRX-001 dan TRX-005",
+      "hasil": "Riwayat LPT-001 berisi PJM-0002 (selesai) dan PJM-0005 (diajukan)",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.1",
+      "harapan": "Status peminjaman: TRX-004/001/002 selesai, TRX-003 dipinjam, TRX-005 diajukan",
+      "hasil": "TRX-004=selesai, TRX-001=selesai, TRX-002=selesai, TRX-003=dipinjam, TRX-005=diajukan",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.2",
+      "harapan": "Status & kondisi aset sesuai tabel bagian 4",
+      "hasil": "LPT-001=tersedia/baik, LPT-002=dalam_perbaikan/rusak, LPT-003=tersedia/baik, PRJ-001=dipinjam/baik, PRJ-002=tersedia/baik, PRJ-003=tersedia/baik, WCM-001=hilang/baik, WCM-002=dipinjam/baik",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.3",
+      "harapan": "Unit terkunci TRX-005 (LPT-001, PRJ-002, PRJ-003) tidak bisa dipilih",
+      "hasil": "Yang masih bisa dipilih hanya: LPT-003",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.4",
+      "harapan": "Riwayat menampilkan kelima transaksi; cari nama & kode aset berjalan",
+      "hasil": "5 transaksi tampil; \"Sari Wulandari\" → PJM-0001; \"PRJ-001\" → PJM-0002, PJM-0003, PJM-0004",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.5",
+      "harapan": "Dashboard Admin & Sarpras: Diajukan 1, Dipinjam 1, Terlambat 0, Aset Tersedia 1",
+      "hasil": "Admin 1/1/0/1, Sarpras 1/1/0/1 (Diajukan/Dipinjam/Terlambat/Aset Tersedia); TRX-005 di \"Menunggu Pemasangan\" Sarpras",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.6",
+      "harapan": "Sarpras tidak bisa membuat, memperpanjang, membatalkan (UI & API)",
+      "hasil": "/peminjaman/baru tidak 403; /perpanjang tidak 403",
+      "status": "gagal",
+      "screenshot": "tests\\screenshots\\gagal-A.6.png"
+    },
+    {
+      "langkah": "A.7",
+      "harapan": "Admin tidak bisa pemasangan & pengembalian (UI & API)",
+      "hasil": "/pemasangan tidak 403; /pengembalian tidak 403",
+      "status": "gagal",
+      "screenshot": "tests\\screenshots\\gagal-A.7.png"
+    }
+  ],
+  "sqlLog": [
+    {
+      "langkah": "3.4",
+      "sql": "update public.peminjaman set tgl_rencana_kembali = '2026-11-24T09:31:50.223Z' where id = 77; -- PJM-0003",
+      "hasil": "OK (1 baris)"
+    },
+    {
+      "langkah": "3.4",
+      "sql": "select public.tandai_terlambat();",
+      "hasil": "1 peminjaman ditandai"
+    },
+    {
+      "langkah": "3.5",
+      "sql": "select public.tandai_terlambat();",
+      "hasil": "0 peminjaman ditandai"
+    }
+  ]
+}

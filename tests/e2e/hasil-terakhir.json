@@ -1,0 +1,70 @@
+{
+  "waktu": "2026-11-24T10:33:29.240Z",
+  "pemetaan": {
+    "TRX-004": {
+      "id": 75,
+      "kode": "PJM-0001"
+    },
+    "TRX-001": {
+      "id": 76,
+      "kode": "PJM-0002"
+    },
+    "TRX-002": {
+      "id": 77,
+      "kode": "PJM-0003"
+    },
+    "TRX-005": {
+      "id": 79,
+      "kode": "PJM-0005"
+    },
+    "TRX-003": {
+      "id": 78,
+      "kode": "PJM-0004"
+    }
+  },
+  "hasil": [
+    {
+      "langkah": "A.1",
+      "harapan": "Status peminjaman: TRX-004/001/002 selesai, TRX-003 dipinjam, TRX-005 diajukan",
+      "hasil": "TRX-004=selesai, TRX-001=selesai, TRX-002=selesai, TRX-003=dipinjam, TRX-005=diajukan",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.2",
+      "harapan": "Status & kondisi aset sesuai tabel bagian 4",
+      "hasil": "LPT-001=tersedia/baik, LPT-002=dalam_perbaikan/rusak, LPT-003=tersedia/baik, PRJ-001=dipinjam/baik, PRJ-002=tersedia/baik, PRJ-003=tersedia/baik, WCM-001=hilang/baik, WCM-002=dipinjam/baik",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.3",
+      "harapan": "Unit terkunci TRX-005 (LPT-001, PRJ-002, PRJ-003) tidak bisa dipilih",
+      "hasil": "Yang masih bisa dipilih hanya: LPT-003",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.4",
+      "harapan": "Riwayat menampilkan kelima transaksi; cari nama & kode aset berjalan",
+      "hasil": "5 transaksi tampil; \"Sari Wulandari\" → PJM-0001; \"PRJ-001\" → PJM-0002, PJM-0003, PJM-0004",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.5",
+      "harapan": "Dashboard Admin & Sarpras: Diajukan 1, Dipinjam 1, Terlambat 0, Aset Tersedia 1",
+      "hasil": "Admin 1/1/0/1, Sarpras 1/1/0/1 (Diajukan/Dipinjam/Terlambat/Aset Tersedia); TRX-005 di \"Menunggu Pemasangan\" Sarpras",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.6",
+      "harapan": "Sarpras tidak bisa membuat, memperpanjang, membatalkan (UI & API)",
+      "hasil": "UI: menu tidak ada, URL → 403, tombol tidak tampil. API ditolak: buat (\"Anda tidak punya izin untuk melakukan aksi ini.\"), perpanjang (\"Anda tidak punya izin untuk melakukan aksi ini.\"), batal (\"Anda tidak punya izin untuk melakukan aksi ini.\"), UPDATE tabel (\"permission denied for table peminjaman\")",
+      "status": "lulus"
+    },
+    {
+      "langkah": "A.7",
+      "harapan": "Admin tidak bisa pemasangan & pengembalian (UI & API)",
+      "hasil": "UI: tombol tidak tampil, URL → 403. API ditolak: reservasi (\"Anda tidak punya izin untuk melakukan aksi ini.\"), simpan_pemasangan (\"Anda tidak punya izin untuk melakukan aksi ini.\"), simpan_pengembalian (\"Anda tidak punya izin untuk melakukan aksi ini.\"), upload Storage (\"new row violates row-level security policy\")",
+      "status": "lulus"
+    }
+  ],
+  "sqlLog": []
+}
