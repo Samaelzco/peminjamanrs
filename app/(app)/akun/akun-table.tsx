@@ -289,7 +289,7 @@ function AkunSheet({
             id="email"
             name="email"
             type="email"
-            placeholder="nama@rsupngoerah.go.id"
+            placeholder="nama@gmail.com"
             maxLength={BATAS.email}
             defaultValue={akun?.email}
             invalid={!!err("email")}

@@ -20,7 +20,7 @@ export function LoginForm({ initialError }: { initialError?: string }) {
           name="email"
           type="email"
           autoComplete="username"
-          placeholder="nama@rsupngoerah.go.id"
+          placeholder="nama@gmail.com"
           maxLength={254}
           defaultValue={state.email}
           required
