@@ -1,24 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import {
-  Button,
-  HelperText,
-  Label,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  TextInput,
-} from "flowbite-react";
-import { HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
-import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
+import { useDeferredValue, useState } from "react";
+import { LuPlus, LuSearch } from "react-icons/lu";
+import { ConfirmDialog, ResultAlert, useAction } from "@/components/feedback";
+import { Sheet, SheetActions } from "@/components/overlay";
+import { Button, Card, Field, InfoNote, Input } from "@/components/ui";
 import { BATAS, sanitasiPrefix } from "@/lib/validation";
 import { createKategori, deleteKategori, updateKategori } from "./actions";
 
@@ -38,75 +24,82 @@ export function KategoriTable({
   const page = useAction();
   const [form, setForm] = useState<{ kategori?: Kategori } | null>(null);
   const [hapus, setHapus] = useState<Kategori | null>(null);
+  const [q, setQ] = useState("");
+  const cari = useDeferredValue(q.trim().toLowerCase());
+  const hasil = kategori.filter(
+    (k) => !cari || k.nama.toLowerCase().includes(cari) || k.kodePrefix.toLowerCase().includes(cari),
+  );
 
   return (
     <>
       <ResultAlert result={page.result} onDismiss={page.reset} />
 
-      {canCreate && (
-        <div className="mb-4 flex justify-end">
-          <Button onClick={() => setForm({})}>
-            <HiOutlinePlus className="me-1.5 h-4 w-4" />
-            Tambah Kategori
-          </Button>
+      <Card className="lg:max-w-3xl">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+          <Field id="cari-kategori" label="Cari">
+            <div className="relative">
+              <Input
+                id="cari-kategori"
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Nama kategori..."
+                className="ps-10"
+                maxLength={BATAS.cari}
+              />
+              <LuSearch className="pointer-events-none absolute inset-y-0 start-3 my-auto h-5 w-5 text-gray-400" aria-hidden />
+            </div>
+          </Field>
+          {canCreate && (
+            <Button onClick={() => setForm({})} block className="sm:w-auto">
+              <LuPlus className="h-4 w-4" aria-hidden />
+              Tambah Kategori
+            </Button>
+          )}
         </div>
-      )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <Table hoverable>
-          <TableHead>
-            <TableRow>
-              <TableHeadCell>Nama</TableHeadCell>
-              <TableHeadCell>Kode Prefix</TableHeadCell>
-              <TableHeadCell>Jumlah Aset</TableHeadCell>
-              <TableHeadCell>
-                <span className="sr-only">Aksi</span>
-              </TableHeadCell>
-            </TableRow>
-          </TableHead>
-          <TableBody className="divide-y">
-            {kategori.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center text-gray-500">
-                  Belum ada kategori.
-                </TableCell>
-              </TableRow>
-            )}
-            {kategori.map((k) => (
-              <TableRow key={k.id} className="bg-white">
-                <TableCell className="font-medium text-gray-900">{k.nama}</TableCell>
-                <TableCell className="font-mono">{k.kodePrefix}</TableCell>
-                <TableCell>{k.jumlahAset}</TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-2">
-                    {canUpdate && (
-                      <Button size="xs" color="light" onClick={() => setForm({ kategori: k })}>
-                        <HiOutlinePencilSquare className="me-1 h-4 w-4" />
-                        Edit
-                      </Button>
-                    )}
-                    {canDelete && (
-                      <Button
-                        size="xs"
-                        color="red"
-                        disabled={k.jumlahAset > 0}
-                        title={k.jumlahAset > 0 ? "Kategori masih memiliki aset" : undefined}
-                        onClick={() => setHapus(k)}
-                      >
-                        <HiOutlineTrash className="me-1 h-4 w-4" />
-                        Hapus
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
+        {hasil.length === 0 ? (
+          <p className="py-8 text-center text-sm text-gray-500">
+            {kategori.length === 0 ? "Belum ada kategori." : "Tidak ada kategori yang cocok."}
+          </p>
+        ) : (
+          <ul className="mt-2 divide-y divide-gray-200">
+            {hasil.map((k) => (
+              <li key={k.id} className="flex items-center gap-3 py-2.5">
+                <div className="min-w-0 flex-1">
+                  <p className="text-[15px] break-words text-gray-900">{k.nama}</p>
+                  <p className="text-xs text-gray-500">
+                    Prefix <span className="font-mono">{k.kodePrefix}</span> · {k.jumlahAset} unit
+                  </p>
+                </div>
+                {canUpdate && (
+                  <Button variant="ghost" size="sm" onClick={() => setForm({ kategori: k })} aria-label={`Edit ${k.nama}`}>
+                    Edit
+                  </Button>
+                )}
+                {canDelete && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-800 hover:bg-red-50"
+                    disabled={k.jumlahAset > 0}
+                    title={k.jumlahAset > 0 ? "Kategori masih memiliki unit" : undefined}
+                    onClick={() => setHapus(k)}
+                    aria-label={`Hapus ${k.nama}`}
+                  >
+                    Hapus
+                  </Button>
+                )}
+              </li>
             ))}
-          </TableBody>
-        </Table>
-      </div>
+          </ul>
+        )}
+
+        {canDelete && <InfoNote className="mt-3">Kategori yang masih punya unit tidak bisa dihapus.</InfoNote>}
+      </Card>
 
       {form && (
-        <KategoriFormModal
+        <KategoriSheet
           key={form.kategori?.id ?? "baru"}
           kategori={form.kategori}
           onClose={() => setForm(null)}
@@ -117,10 +110,15 @@ export function KategoriTable({
         />
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         open={!!hapus}
-        title="Hapus kategori"
-        message={`Kategori "${hapus?.nama}" akan dihapus permanen. Lanjutkan?`}
+        title="Hapus Kategori?"
+        message={
+          <>
+            Kategori <strong className="text-gray-900">{hapus?.nama}</strong> akan dihapus. Tindakan ini tidak bisa
+            dibatalkan. Kategori yang masih punya unit barang tidak bisa dihapus.
+          </>
+        }
         confirmLabel="Hapus"
         pending={page.pending}
         onClose={() => setHapus(null)}
@@ -134,7 +132,7 @@ export function KategoriTable({
   );
 }
 
-function KategoriFormModal({
+function KategoriSheet({
   kategori,
   onClose,
   onSaved,
@@ -160,45 +158,66 @@ function KategoriFormModal({
   }
 
   return (
-    <Modal show size="md" onClose={onClose} dismissible>
-      <ModalHeader>{kategori ? "Edit Kategori" : "Tambah Kategori"}</ModalHeader>
-      <form onSubmit={(e) => { e.preventDefault(); submit(new FormData(e.currentTarget)); }}>
-        <ModalBody>
-          {action.result && !action.result.ok && <ResultAlert result={action.result} />}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="nama" className="mb-1.5 block">Nama kategori</Label>
-              <TextInput id="nama" name="nama" maxLength={BATAS.namaKategori} defaultValue={kategori?.nama} required color={err("nama") ? "failure" : undefined} />
-              {err("nama") && <HelperText color="failure">{err("nama")}</HelperText>}
-            </div>
-            <div>
-              <Label htmlFor="kode_prefix" className="mb-1.5 block">Kode prefix</Label>
-              <TextInput
-                id="kode_prefix"
-                name="kode_prefix"
-                defaultValue={kategori?.kodePrefix}
-                placeholder="TI-LPT"
-                maxLength={BATAS.kodePrefix}
-                className="uppercase"
-                autoComplete="off"
-                onChange={(e) => {
-                  e.currentTarget.value = sanitasiPrefix(e.currentTarget.value);
-                }}
-                required
-                disabled={prefixLocked}
-                color={err("kode_prefix") ? "failure" : undefined}
-              />
-              {err("kode_prefix") && <HelperText color="failure">{err("kode_prefix")}</HelperText>}
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter className="justify-end">
-          <Button color="alternative" onClick={onClose} disabled={action.pending}>Batal</Button>
-          <Button type="submit" disabled={action.pending}>
-            {action.pending ? "Menyimpan..." : "Simpan"}
+    <Sheet
+      open
+      onClose={onClose}
+      title={kategori ? "Edit Kategori" : "Tambah Kategori"}
+      dismissible={!action.pending}
+      footer={
+        <SheetActions>
+          <Button variant="secondary" onClick={onClose} disabled={action.pending}>
+            Batal
           </Button>
-        </ModalFooter>
+          <Button type="submit" form="form-kategori" loading={action.pending}>
+            Simpan
+          </Button>
+        </SheetActions>
+      }
+    >
+      <form
+        id="form-kategori"
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit(new FormData(e.currentTarget));
+        }}
+      >
+        {action.result && !action.result.ok && <ResultAlert result={action.result} className="" />}
+        <Field id="nama" label="Nama Kategori" error={err("nama")}>
+          <Input
+            id="nama"
+            name="nama"
+            placeholder="Contoh: Proyektor"
+            maxLength={BATAS.namaKategori}
+            defaultValue={kategori?.nama}
+            invalid={!!err("nama")}
+            data-autofocus
+            required
+          />
+        </Field>
+        <Field
+          id="kode_prefix"
+          label="Kode Prefix"
+          error={err("kode_prefix")}
+          hint={prefixLocked ? "Prefix dikunci karena kategori sudah punya unit." : "Dipakai untuk kode barang, contoh TI-LPT-001."}
+        >
+          <Input
+            id="kode_prefix"
+            name="kode_prefix"
+            defaultValue={kategori?.kodePrefix}
+            placeholder="TI-LPT"
+            maxLength={BATAS.kodePrefix}
+            className="uppercase"
+            autoComplete="off"
+            onChange={(e) => {
+              e.currentTarget.value = sanitasiPrefix(e.currentTarget.value);
+            }}
+            required
+            disabled={prefixLocked}
+            invalid={!!err("kode_prefix")}
+          />
+        </Field>
       </form>
-    </Modal>
+    </Sheet>
   );
 }

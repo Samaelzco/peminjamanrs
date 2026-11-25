@@ -60,10 +60,10 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
     await expect(page.getByText("Tidak valid. Format: dd/mm/yyyy jj:mm (24 jam).").first()).toBeVisible();
   });
 
-  await test.step("T2: Ganti membuka modal (bukan dropdown di dalam tabel)", async () => {
+  await test.step("T2: Ganti membuka sheet (bukan dropdown di dalam daftar unit)", async () => {
     await page.locator("#kategori").selectOption({ label: "Laptop" });
     await page.getByRole("button", { name: "Tambah Unit" }).click();
-    const row = page.locator("table tbody tr").filter({ hasText: /TI-LPT-\d{3}/ }).first();
+    const row = page.locator("[data-unit-draft]").filter({ hasText: /TI-LPT-\d{3}/ }).first();
     await expect(row).toBeVisible();
     await row.getByRole("button", { name: "Ganti" }).click();
     const dialog = page.getByRole("dialog");
@@ -72,7 +72,7 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
     await page.screenshot({ path: "tests/screenshots/T2-modal-ganti.png", fullPage: true });
     await dialog.getByRole("button", { name: "Batal" }).click();
     await expect(dialog).toBeHidden();
-    // Tombol aksi tetap utuh di dalam tabel.
+    // Tombol aksi tetap utuh di kartu unit.
     await expect(row.getByRole("button", { name: "Hapus" })).toBeVisible();
   });
 
@@ -83,7 +83,7 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
     await page.locator("#ruangan").fill("R. Rapat");
     await page.locator("#tgl_peminjaman").fill(witaInput(0));
     await page.locator("#tgl_rencana_kembali").fill(witaInput(40 * HARI));
-    await page.getByRole("button", { name: "Simpan Peminjaman" }).click();
+    await page.getByRole("button", { name: "Simpan", exact: true }).click();
     await expect(page.getByText("Periksa kembali isian Anda.")).toBeVisible();
     await expect(page.getByText(/Nama peminjam hanya boleh berisi huruf/)).toBeVisible();
     await expect(page.getByText("Nomor kontak minimal 10 angka.")).toBeVisible();
@@ -96,7 +96,7 @@ test("Form Peminjaman Baru: sanitasi & validasi", async ({ page }) => {
     await page.locator("#kontak_peminjam").fill("1812345678");
     await page.locator("#tgl_peminjaman").fill(witaInput(-10 * HARI));
     await page.locator("#tgl_rencana_kembali").fill(witaInput(-9 * HARI));
-    await page.getByRole("button", { name: "Simpan Peminjaman" }).click();
+    await page.getByRole("button", { name: "Simpan", exact: true }).click();
     await expect(page.getByText("Nomor kontak harus diawali 0 atau 62.")).toBeVisible();
     await expect(page.getByText("Tanggal keluar paling lama 7 hari ke belakang.")).toBeVisible();
   });

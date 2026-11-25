@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Button, HelperText, Spinner } from "flowbite-react";
-import { HiOutlineCamera, HiOutlinePhoto, HiOutlineXMark } from "react-icons/hi2";
+import { LuCamera, LuPlus, LuX } from "react-icons/lu";
+import { FieldError, Spinner } from "@/components/ui";
 import { compressImage } from "@/lib/image";
 
 export type PickedPhoto = { id: string; blob: Blob; url: string; size: number };
+
+const TILE =
+  "flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-sm font-semibold transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50";
 
 export function PhotoPicker({
   photos,
@@ -58,21 +61,49 @@ export function PhotoPicker({
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
-        <Button type="button" color="light" disabled={disabled || busy} onClick={() => cameraRef.current?.click()}>
-          <HiOutlineCamera className="me-1.5 h-4 w-4" />
-          Ambil Foto
-        </Button>
-        <Button type="button" color="light" disabled={disabled || busy} onClick={() => galleryRef.current?.click()}>
-          <HiOutlinePhoto className="me-1.5 h-4 w-4" />
-          Pilih dari Galeri
-        </Button>
-        {busy && (
-          <span className="flex items-center gap-2 text-sm text-gray-500">
-            <Spinner size="sm" /> Mengompres...
-          </span>
-        )}
-      </div>
+      <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+        {photos.map((p) => (
+          <li key={p.id} className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={p.url} alt="Pratinjau foto" className="h-full w-full object-cover" />
+            <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 text-[10px] text-white">
+              {Math.round(p.size / 1024)} KB
+            </span>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={() => remove(p.id)}
+                className="absolute top-1 right-1 grid h-8 w-8 place-items-center rounded-full bg-white/95 text-gray-700 shadow hover:bg-white"
+                aria-label="Hapus foto"
+              >
+                <LuX className="h-4 w-4" />
+              </button>
+            )}
+          </li>
+        ))}
+        <li>
+          <button
+            type="button"
+            disabled={disabled || busy}
+            onClick={() => galleryRef.current?.click()}
+            className={`${TILE} w-full border-brand-300 bg-brand-50/50 text-brand-700 hover:bg-brand-50`}
+          >
+            {busy ? <Spinner className="h-5 w-5" /> : <LuPlus className="h-6 w-6" aria-hidden />}
+            {busy ? "Proses..." : "Foto"}
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            disabled={disabled || busy}
+            onClick={() => cameraRef.current?.click()}
+            className={`${TILE} w-full border-gray-300 text-gray-600 hover:bg-gray-50`}
+          >
+            <LuCamera className="h-6 w-6" aria-hidden />
+            Kamera
+          </button>
+        </li>
+      </ul>
       {/* capture membuka kamera langsung di HP */}
       <input
         ref={cameraRef}
@@ -90,31 +121,7 @@ export function PhotoPicker({
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
-
-      {photos.length > 0 && (
-        <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
-          {photos.map((p) => (
-            <li key={p.id} className="group relative aspect-square overflow-hidden rounded-lg border border-gray-200">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="Pratinjau foto" className="h-full w-full object-cover" />
-              <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 text-[10px] text-white">
-                {Math.round(p.size / 1024)} KB
-              </span>
-              {!disabled && (
-                <button
-                  type="button"
-                  onClick={() => remove(p.id)}
-                  className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-gray-700 shadow hover:bg-white"
-                  aria-label="Hapus foto"
-                >
-                  <HiOutlineXMark className="h-4 w-4" />
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {(error || localError) && <HelperText color="failure">{error ?? localError}</HelperText>}
+      <FieldError>{error ?? localError}</FieldError>
     </div>
   );
 }

@@ -1,24 +1,14 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { Card } from "flowbite-react";
-import {
-  HiOutlineArchiveBox,
-  HiOutlineClipboardDocumentList,
-  HiOutlineExclamationTriangle,
-  HiOutlinePlus,
-  HiOutlineTruck,
-} from "react-icons/hi2";
-import { LinkButton } from "@/components/link-button";
-import { PageHeader } from "@/components/page-header";
-import { PEMINJAMAN_ROW_SELECT, PeminjamanTable, toPeminjamanRow } from "@/components/peminjaman-table";
+import { PEMINJAMAN_ROW_SELECT, PeminjamanCard, toPeminjamanRow, type PeminjamanRow } from "@/components/peminjaman-table";
+import { ButtonLink, EmptyState, PageHeader, SectionTitle, StatCard, StatGrid } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import type { StatusPeminjaman } from "@/lib/labels";
+import { formatTanggal } from "@/lib/datetime";
 import { menuFor } from "@/lib/menu";
 import { createClient } from "@/lib/supabase/server";
+import { PeminjamanBerjalan } from "./dashboard-berjalan";
 
 export const metadata: Metadata = { title: "Dashboard" };
-
-type Section = { judul: string; deskripsi: string; status: StatusPeminjaman; kosong: string };
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -29,107 +19,140 @@ export default async function DashboardPage() {
   }
 
   const supabase = await createClient();
+  const sarpras = perms.includes("pemasangan.create");
+  const bisaLihat = perms.includes("peminjaman.view");
 
-  // Tabel tindak lanjut sesuai permission.
-  const sections: Section[] = [];
-  if (perms.includes("pemasangan.create")) {
-    sections.push({
-      judul: "Menunggu Pemasangan",
-      deskripsi: "Peminjaman yang unitnya belum dipasang (termasuk yang sudah terlambat).",
-      status: "diajukan",
-      kosong: "Tidak ada peminjaman yang menunggu pemasangan.",
-    });
-  }
-  if (perms.includes("peminjaman.view")) {
-    sections.push(
-      {
-        judul: "Terlambat",
-        deskripsi: "Melewati rencana kembali — perlu ditindaklanjuti.",
-        status: "terlambat",
-        kosong: "Tidak ada peminjaman terlambat.",
-      },
-      {
-        judul: perms.includes("pemasangan.create") ? "Sedang Dipinjam" : "Peminjaman Berjalan",
-        deskripsi: "Unit sedang dipakai peminjam.",
-        status: "dipinjam",
-        kosong: "Tidak ada peminjaman berjalan.",
-      },
-    );
-  }
+  const hitung = (status: "dibatalkan" | "selesai") =>
+    bisaLihat
+      ? supabase.from("peminjaman").select("id", { count: "exact", head: true }).eq("status", status)
+      : Promise.resolve({ count: null });
 
-  // Ringkasan dan semua tabel diambil bersamaan.
-  const [{ data: ringkasan }, ...data] = await Promise.all([
+  const [{ data: ringkasan }, { count: dibatalkan }, { count: selesai }, { data: berjalan }] = await Promise.all([
     supabase.rpc("ringkasan_dashboard").single(),
-    ...sections.map((s) =>
-      s.status === "diajukan"
-        ? supabase
-            .from("peminjaman")
-            .select(`${PEMINJAMAN_ROW_SELECT}, pemasangan(id)`)
-            .in("status", ["diajukan", "terlambat"])
-            .is("perpanjangan_dari", null)
-            .is("pemasangan", null)
-            .order("tgl_peminjaman")
-            .limit(50)
-        : supabase
-            .from("peminjaman")
-            .select(PEMINJAMAN_ROW_SELECT)
-            .eq("status", s.status)
-            .order("tgl_rencana_kembali")
-            .limit(50),
-    ),
+    hitung("dibatalkan"),
+    hitung("selesai"),
+    bisaLihat
+      ? supabase
+          .from("peminjaman")
+          .select(PEMINJAMAN_ROW_SELECT)
+          .in("status", ["diajukan", "dipinjam", "terlambat"])
+          .order("tgl_rencana_kembali")
+          .limit(200)
+      : Promise.resolve({ data: [] }),
   ]);
 
-  const kartu = [
-    { label: "Diajukan", nilai: ringkasan?.diajukan ?? 0, icon: HiOutlineClipboardDocumentList, warna: "bg-yellow-100 text-yellow-700" },
-    { label: "Dipinjam", nilai: ringkasan?.dipinjam ?? 0, icon: HiOutlineTruck, warna: "bg-cyan-100 text-cyan-700" },
-    { label: "Terlambat", nilai: ringkasan?.terlambat ?? 0, icon: HiOutlineExclamationTriangle, warna: "bg-red-100 text-red-700" },
-    { label: "Aset Tersedia", nilai: ringkasan?.aset_tersedia ?? 0, icon: HiOutlineArchiveBox, warna: "bg-green-100 text-green-700" },
-  ];
+  const rows = (berjalan ?? []).map(toPeminjamanRow);
 
   return (
     <>
       <PageHeader
-        title="Dashboard"
-        description={`Selamat datang, ${user.nama} (${user.roleNama}).`}
-        actions={
-          perms.includes("peminjaman.create") ? (
-            <LinkButton href="/peminjaman/baru">
-              <HiOutlinePlus className="me-1.5 h-4 w-4" />
-              Peminjaman Baru
-            </LinkButton>
-          ) : undefined
+        title={sarpras ? "Dashboard Sarpras" : "Dashboard"}
+        description={
+          sarpras ? "Tugas pemasangan, pengecekan, dan pengembalian barang" : "Ringkasan peminjaman yang sedang berjalan"
         }
       />
 
-      <div className="mb-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {kartu.map((k) => (
-          <Card key={k.label}>
-            <div className="flex items-center gap-4">
-              <span className={`rounded-lg p-3 ${k.warna}`}>
-                <k.icon className="h-6 w-6" />
-              </span>
-              <div>
-                <p className="text-sm text-gray-500">{k.label}</p>
-                <p className="text-2xl font-bold text-gray-900">{k.nilai}</p>
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+      <StatGrid>
+        <StatCard label="Dibatalkan" value={dibatalkan ?? 0} />
+        <StatCard label="Menunggu Pemasangan" value={ringkasan?.diajukan ?? 0} tone="amber" />
+        <StatCard label="Terlambat" value={ringkasan?.terlambat ?? 0} tone="red" />
+        <StatCard label="Selesai" value={selesai ?? 0} tone="green" />
+      </StatGrid>
 
-      <div className="space-y-8">
-        {sections.map((s, i) => (
-          <section key={s.status}>
-            <div className="mb-3">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {s.judul} <span className="text-sm font-normal text-gray-500">({data[i].data?.length ?? 0})</span>
-              </h2>
-              <p className="text-sm text-gray-500">{s.deskripsi}</p>
-            </div>
-            <PeminjamanTable rows={(data[i].data ?? []).map(toPeminjamanRow)} empty={s.kosong} />
-          </section>
-        ))}
-      </div>
+      {!bisaLihat ? null : sarpras ? (
+        <TugasSarpras rows={rows} bisaKembali={perms.includes("pengembalian.create")} />
+      ) : (
+        <PeminjamanBerjalan rows={rows} bisaBuat={perms.includes("peminjaman.create")} />
+      )}
     </>
+  );
+}
+
+function TugasSarpras({ rows, bisaKembali }: { rows: PeminjamanRow[]; bisaKembali: boolean }) {
+  const menunggu = rows
+    .filter((r) => !r.terpasang && r.status !== "dipinjam")
+    .sort((a, b) => a.tglPeminjaman.localeCompare(b.tglPeminjaman));
+  const terlambat = rows.filter((r) => r.terpasang && r.status === "terlambat");
+  const dipinjam = rows.filter((r) => r.terpasang && r.status === "dipinjam");
+
+  const sections = [
+    {
+      judul: "Menunggu Pemasangan",
+      kosong: "Tidak ada peminjaman yang menunggu pemasangan.",
+      rows: menunggu,
+      aksi: (r: PeminjamanRow) => ({ href: `/peminjaman/${r.id}/pemasangan`, label: "Pemasangan" }),
+      meta: (r: PeminjamanRow) => (
+        <div className="mt-1 space-y-1 text-sm text-gray-500">
+          <p className="break-words">{r.ruangan} · Keluar {formatTanggal(r.tglPeminjaman)}</p>
+          <p className="break-words text-gray-700">{r.barang}</p>
+        </div>
+      ),
+    },
+    {
+      judul: "Terlambat — Perlu Dicek ke Lokasi",
+      kosong: "Tidak ada peminjaman terlambat.",
+      rows: terlambat,
+      aksi: (r: PeminjamanRow) =>
+        bisaKembali ? { href: `/peminjaman/${r.id}/pengembalian`, label: "Pengembalian" } : null,
+      meta: (r: PeminjamanRow) => (
+        <div className="mt-1 space-y-1 text-sm text-gray-500">
+          <p className="break-words">
+            {r.ruangan} · <span className="font-semibold text-red-800">Tgl kembali {formatTanggal(r.tglRencanaKembali)}</span>
+          </p>
+          <p>
+            Kontak{" "}
+            <a href={`tel:${r.kontak}`} className="relative z-10 font-medium text-brand-700 hover:underline">
+              {r.kontak}
+            </a>
+          </p>
+        </div>
+      ),
+    },
+    {
+      judul: "Sedang Dipinjam",
+      kosong: "Tidak ada peminjaman berjalan.",
+      rows: dipinjam,
+      aksi: (r: PeminjamanRow) =>
+        bisaKembali ? { href: `/peminjaman/${r.id}/pengembalian`, label: "Pengembalian" } : null,
+      meta: (r: PeminjamanRow) => (
+        <p className="mt-1 text-sm break-words text-gray-500">
+          {r.ruangan} · Tgl kembali {formatTanggal(r.tglRencanaKembali)}
+        </p>
+      ),
+    },
+  ];
+
+  return (
+    <div className="mt-6 space-y-8">
+      {sections.map((s) => (
+        <section key={s.judul} aria-label={s.judul}>
+          <SectionTitle count={s.rows.length}>{s.judul}</SectionTitle>
+          {s.rows.length === 0 ? (
+            <EmptyState>{s.kosong}</EmptyState>
+          ) : (
+            <ul className="grid items-start gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {s.rows.map((r) => {
+                const a = s.aksi(r);
+                return (
+                  <PeminjamanCard
+                    key={r.id}
+                    row={r}
+                    meta={s.meta(r)}
+                    aksi={
+                      <div className="grid grid-cols-2 gap-2">
+                        <ButtonLink href={`/peminjaman/${r.id}`} variant="secondary" className={a ? "" : "col-span-2"}>
+                          Detail
+                        </ButtonLink>
+                        {a && <ButtonLink href={a.href}>{a.label}</ButtonLink>}
+                      </div>
+                    }
+                  />
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      ))}
+    </div>
   );
 }

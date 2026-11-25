@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { HelperText, TextInput } from "flowbite-react";
-import { HiOutlineCalendarDays } from "react-icons/hi2";
+import { LuCalendarDays } from "react-icons/lu";
+import { FieldError, Input } from "@/components/ui";
 
 /**
  * Input tanggal (& jam) WITA dengan format tampilan tetap dd/MM/yyyy HH:mm (24 jam),
@@ -76,7 +76,7 @@ export function DateTimeField({
   return (
     <div>
       <div className="relative">
-        <TextInput
+        <Input
           id={id}
           value={teks}
           onChange={(e) => set(masker(e.target.value, tanggalSaja))}
@@ -86,8 +86,8 @@ export function DateTimeField({
           maxLength={tanggalSaja ? 10 : 16}
           autoComplete="off"
           required={required}
-          color={error || errorLokal ? "failure" : undefined}
-          aria-describedby={`${id}-help`}
+          invalid={!!(error || errorLokal)}
+          className="pe-12"
         />
         <button
           type="button"
@@ -101,10 +101,10 @@ export function DateTimeField({
               el.focus();
             }
           }}
-          className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-cyan-700"
+          className="absolute inset-y-0 end-0 grid w-11 place-items-center rounded-e-lg text-gray-500 hover:text-brand-700"
           aria-label="Pilih dari kalender"
         >
-          <HiOutlineCalendarDays className="h-5 w-5" />
+          <LuCalendarDays className="h-5 w-5" />
         </button>
         {/* Picker bawaan browser hanya untuk memilih; tampilan tetap memakai format di atas. */}
         <input
@@ -122,11 +122,7 @@ export function DateTimeField({
         />
       </div>
       <input type="hidden" name={name} value={lokal ?? ""} />
-      {(error || errorLokal) && (
-        <HelperText id={`${id}-help`} color="failure" className="text-xs">
-          {error ?? errorLokal}
-        </HelperText>
-      )}
+      <FieldError id={`${id}-error`}>{error ?? errorLokal}</FieldError>
     </div>
   );
 }

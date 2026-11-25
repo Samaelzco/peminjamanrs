@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Alert, Button, HelperText, Label, Spinner, Textarea } from "flowbite-react";
 import { DateTimeField } from "@/components/datetime-field";
+import { Alert, Button, ButtonLink, Field, Textarea } from "@/components/ui";
 import { BATAS } from "@/lib/validation";
 import { perpanjangPeminjaman } from "../../actions";
 
@@ -34,9 +34,8 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
         });
       }}
     >
-      {error && <Alert color="failure">{error}</Alert>}
-      <div>
-        <Label htmlFor="tgl_rencana_kembali" className="mb-1.5 block">Rencana kembali baru (WITA)</Label>
+      {error && <Alert tone="danger">{error}</Alert>}
+      <Field id="tgl_rencana_kembali" label="Tanggal kembali baru (WITA)">
         <DateTimeField
           id="tgl_rencana_kembali"
           name="tgl_rencana_kembali"
@@ -44,9 +43,8 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
           required
           error={fieldErrors.tgl_rencana_kembali?.[0]}
         />
-      </div>
-      <div>
-        <Label htmlFor="alasan" className="mb-1.5 block">Alasan perpanjangan</Label>
+      </Field>
+      <Field id="alasan" label="Alasan perpanjangan" error={fieldErrors.alasan?.[0]}>
         <Textarea
           id="alasan"
           name="alasan"
@@ -55,13 +53,15 @@ export function PerpanjangForm({ peminjamanId, defaultTanggal }: { peminjamanId:
           maxLength={BATAS.alasan}
           value={alasan}
           onChange={(e) => setAlasan(e.target.value)}
-          color={fieldErrors.alasan ? "failure" : undefined}
+          invalid={!!fieldErrors.alasan}
+          placeholder="Contoh: kegiatan diperpanjang satu hari"
         />
-        {fieldErrors.alasan && <HelperText color="failure">{fieldErrors.alasan[0]}</HelperText>}
-      </div>
-      <div className="flex justify-end">
-        <Button type="submit" disabled={pending}>
-          {pending && <Spinner size="sm" className="me-2" />}
+      </Field>
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        <ButtonLink href={`/peminjaman/${peminjamanId}`} variant="secondary">
+          Batal
+        </ButtonLink>
+        <Button type="submit" loading={pending}>
           Perpanjang
         </Button>
       </div>

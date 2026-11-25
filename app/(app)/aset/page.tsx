@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader, StatCard, StatGrid } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { KONDISI_ASET_LIST, STATUS_ASET_LIST, type KondisiAset, type StatusAset } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/server";
-import { AsetFilters } from "./aset-filters";
-import { AsetTable } from "./aset-table";
+import { AsetView } from "./aset-view";
 
-export const metadata: Metadata = { title: "Data Aset" };
+export const metadata: Metadata = { title: "Data Barang" };
 
 function one(v: string | string[] | undefined) {
   return typeof v === "string" ? v : undefined;
@@ -34,20 +33,34 @@ export default async function AsetPage({ searchParams }: PageProps<"/aset">) {
     query = query.or(`kode_aset.ilike.%${safe}%,nama_aset.ilike.%${safe}%`);
   }
 
-  const [{ data: aset, error }, { data: kategori }] = await Promise.all([
+  const [{ data: aset, error }, { data: kategori }, { data: semua }] = await Promise.all([
     query,
     supabase.from("kategori").select("id, nama, kode_prefix").order("nama"),
+    supabase.from("aset").select("status, kondisi"),
   ]);
   if (error) throw new Error(error.message);
 
+  const statistik = (semua ?? []).reduce(
+    (acc, a) => {
+      acc.total++;
+      if (a.status === "tersedia") acc.tersedia++;
+      if (a.status === "dipinjam") acc.dipinjam++;
+      if (a.status === "hilang" || a.kondisi === "rusak") acc.rusakHilang++;
+      return acc;
+    },
+    { total: 0, tersedia: 0, dipinjam: 0, rusakHilang: 0 },
+  );
+
   return (
     <>
-      <PageHeader title="Data Aset" description="Kode aset dibuat otomatis dari prefix kategori." />
-      <AsetFilters
-        kategori={kategori ?? []}
-        value={{ kategori: kategoriId ? String(kategoriId) : "", status: status ?? "", kondisi: kondisi ?? "", q: q ?? "" }}
-      />
-      <AsetTable
+      <PageHeader title="Data Barang" description="Setiap unit fisik punya kode sendiri" />
+      <StatGrid>
+        <StatCard label="Total Unit" value={statistik.total} />
+        <StatCard label="Tersedia" value={statistik.tersedia} tone="green" />
+        <StatCard label="Dipinjam" value={statistik.dipinjam} tone="blue" />
+        <StatCard label="Rusak / Hilang" value={statistik.rusakHilang} tone="red" />
+      </StatGrid>
+      <AsetView
         aset={(aset ?? []).map((a) => ({
           id: a.id,
           kodeAset: a.kode_aset,
@@ -59,6 +72,7 @@ export default async function AsetPage({ searchParams }: PageProps<"/aset">) {
           kategoriNama: a.kategori?.nama ?? "-",
         }))}
         kategori={kategori ?? []}
+        filter={{ kategori: kategoriId ? String(kategoriId) : "", status: status ?? "", kondisi: kondisi ?? "", q: q ?? "" }}
         canCreate={user.permissions.includes("aset.create")}
         canUpdate={user.permissions.includes("aset.update")}
         canDelete={user.permissions.includes("aset.delete")}

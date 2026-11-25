@@ -2,22 +2,15 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  Alert,
-  Badge,
-  Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-} from "flowbite-react";
-import { requireAnyPermission } from "@/lib/auth";
-import { formatWita, menitSejak } from "@/lib/datetime";
-import { KONDISI, STATUS_PEMINJAMAN } from "@/lib/labels";
-import { getPeminjaman } from "@/lib/peminjaman";
+import { LuCamera } from "react-icons/lu";
+import { StatusPill } from "@/components/peminjaman-table";
 import { PhotoGallery } from "@/components/photo-gallery";
+import { Alert, Card, CardTitle, InfoGrid, InfoItem, PageHeader, Pill } from "@/components/ui";
+import { requireAnyPermission } from "@/lib/auth";
+import { formatWaktu, menitSejak } from "@/lib/datetime";
+import { KONDISI } from "@/lib/labels";
+import { getPeminjaman } from "@/lib/peminjaman";
+import type { Permission } from "@/lib/permissions";
 import { AksiPeminjaman } from "./aksi-peminjaman";
 import { Timeline } from "./timeline";
 
@@ -34,144 +27,151 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
   const p = await getPeminjaman(pid);
   if (!p) notFound();
 
-  const st = STATUS_PEMINJAMAN[p.status];
   const terlambatMenit = p.status === "terlambat" ? menitSejak(p.tglRencanaKembali) : 0;
+  const can = (perm: Permission) => user.permissions.includes(perm);
+
+  const aksi = (
+    <AksiPeminjaman
+      id={p.id}
+      kode={p.kode}
+      status={p.status}
+      terpasang={p.terpasang}
+      can={{
+        update: can("peminjaman.update"),
+        pemasangan: can("pemasangan.create"),
+        pengembalian: can("pengembalian.create"),
+        extend: can("peminjaman.extend"),
+        cancel: can("peminjaman.cancel"),
+      }}
+    />
+  );
 
   return (
     <>
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <p className="text-sm text-gray-500">Detail Peminjaman</p>
-          <div className="flex items-center gap-3">
-            <h1 className="font-mono text-2xl font-bold text-gray-900">{p.kode}</h1>
-            <Badge color={st.color} size="sm">{st.label}</Badge>
-          </div>
-          <p className="mt-1 text-sm text-gray-500">
-            Dicatat oleh {p.dicatatOleh} · {formatWita(p.createdAt)}
-          </p>
-        </div>
-        <AksiPeminjaman
-          id={p.id}
-          kode={p.kode}
-          status={p.status}
-          terpasang={p.terpasang}
-          can={{
-            update: user.permissions.includes("peminjaman.update"),
-            pemasangan: user.permissions.includes("pemasangan.create"),
-            pengembalian: user.permissions.includes("pengembalian.create"),
-            extend: user.permissions.includes("peminjaman.extend"),
-            cancel: user.permissions.includes("peminjaman.cancel"),
-          }}
-        />
+      <PageHeader
+        back={{ href: "/", label: "Kembali ke Dashboard" }}
+        title={
+          <>
+            <span className="font-bold">Detail Peminjaman · </span>
+            <span data-kode>{p.kode}</span>
+          </>
+        }
+        description={`Dicatat oleh ${p.dicatatOleh} · ${formatWaktu(p.createdAt)}`}
+      />
+
+      <div className="space-y-3">
+        {baru === "1" && (
+          <Alert tone={p.status === "terlambat" ? "warning" : "success"}>
+            Peminjaman {p.kode} tersimpan dengan status {p.status === "terlambat" ? "Terlambat" : "Menunggu Pemasangan"}
+            {p.status === "terlambat" && " karena rencana kembali sudah lewat"}. Petugas Sarpras sudah diberi notifikasi.
+          </Alert>
+        )}
+        {diubah === "1" && <Alert tone="success">Perubahan {p.kode} tersimpan.</Alert>}
+        {perpanjangan === "1" && p.sebelumnya && (
+          <Alert tone="success">
+            Perpanjangan berhasil. {p.kode} langsung berstatus Dipinjam; {p.sebelumnya.kode_peminjaman} ditutup menjadi
+            Selesai.
+          </Alert>
+        )}
+        {p.status === "terlambat" && (
+          <Alert tone="danger">
+            Terlambat {formatDurasi(terlambatMenit)} dari tanggal kembali ({formatWaktu(p.tglRencanaKembali)}).
+            {!p.terpasang && " Unit belum dipasang."}
+          </Alert>
+        )}
       </div>
 
-      {baru === "1" && (
-        <Alert color={p.status === "terlambat" ? "warning" : "success"} className="mb-4">
-          Peminjaman {p.kode} tersimpan dengan status {st.label}
-          {p.status === "terlambat" && " karena rencana kembali sudah lewat"}. Petugas Sarpras sudah diberi notifikasi.
-        </Alert>
-      )}
-      {diubah === "1" && (
-        <Alert color="success" className="mb-4">Perubahan {p.kode} tersimpan.</Alert>
-      )}
-      {perpanjangan === "1" && p.sebelumnya && (
-        <Alert color="success" className="mb-4">
-          Perpanjangan berhasil. {p.kode} langsung berstatus Dipinjam; {p.sebelumnya.kode_peminjaman} ditutup menjadi Selesai.
-        </Alert>
-      )}
-      {p.status === "terlambat" && (
-        <Alert color="failure" className="mb-4">
-          Terlambat {formatDurasi(terlambatMenit)} dari rencana kembali {formatWita(p.tglRencanaKembali)}.
-          {!p.terpasang && " Unit belum dipasang."}
-        </Alert>
-      )}
-
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
+      <div className="mt-3 grid gap-3 lg:mt-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-4">
+        <div className="space-y-3 lg:space-y-4">
           <Card>
-            <h2 className="text-base font-semibold text-gray-900">Informasi Peminjam</h2>
-            <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              <Info label="Nama peminjam" value={p.namaPeminjam} />
-              <Info label="Nomor kontak" value={p.kontak} />
-              <Info label="Divisi" value={p.divisi} />
-              <Info label="Ruangan" value={p.ruangan} />
-              <Info label="Tanggal keluar" value={formatWita(p.tglPeminjaman)} />
-              <Info label="Rencana kembali" value={formatWita(p.tglRencanaKembali)} />
-              <div className="sm:col-span-2">
-                <Info label="Keperluan" value={p.keperluan} />
-              </div>
-            </dl>
+            <CardTitle className="mb-3.5">Informasi Peminjaman</CardTitle>
+            <InfoGrid>
+              <InfoItem label="Nama Peminjam">{p.namaPeminjam}</InfoItem>
+              <InfoItem label="Nomor Kontak">
+                <a href={`tel:${p.kontak}`} className="hover:text-brand-700 hover:underline">
+                  {p.kontak}
+                </a>
+              </InfoItem>
+              <InfoItem label="Unit Peminjam">{p.divisi}</InfoItem>
+              <InfoItem label="Ruangan">{p.ruangan}</InfoItem>
+              <InfoItem label="Tanggal Keluar">{formatWaktu(p.tglPeminjaman)}</InfoItem>
+              <InfoItem label="Tanggal Kembali">{formatWaktu(p.tglRencanaKembali)}</InfoItem>
+              <InfoItem label="Status">
+                <StatusPill status={p.status} />
+              </InfoItem>
+              <InfoItem label="Validasi Pemasangan">
+                {p.pemasangan ? (
+                  <Pill tone="green" wrap>
+                    {p.pemasangan.staffNama ?? "Sarpras"} · {formatWaktu(p.pemasangan.tgl)}
+                  </Pill>
+                ) : p.terpasang ? (
+                  <Pill tone="teal">Lanjutan perpanjangan</Pill>
+                ) : (
+                  <Pill tone="gray">Belum divalidasi</Pill>
+                )}
+              </InfoItem>
+              {p.pengembalian && (
+                <InfoItem label="Validasi Pengembalian">
+                  <Pill tone="green" wrap>
+                    {p.pengembalian.staffNama ?? "Sarpras"} · {formatWaktu(p.pengembalian.tgl)}
+                  </Pill>
+                </InfoItem>
+              )}
+              <InfoItem label="Alasan Peminjaman" className="col-span-2 md:col-span-3">
+                {p.keperluan}
+              </InfoItem>
+            </InfoGrid>
           </Card>
 
           <Card>
-            <h2 className="text-base font-semibold text-gray-900">Unit ({p.units.length})</h2>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeadCell>Kode</TableHeadCell>
-                    <TableHeadCell>Nama Barang</TableHeadCell>
-                    <TableHeadCell>Kategori</TableHeadCell>
-                    <TableHeadCell>Kondisi Keluar</TableHeadCell>
-                    <TableHeadCell>Kondisi Masuk</TableHeadCell>
-                    <TableHeadCell>Catatan</TableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody className="divide-y">
-                  {p.units.map((u) => (
-                    <TableRow key={u.detailId} className="bg-white">
-                      <TableCell className="font-mono font-medium">
-                        <Link href={`/aset/${u.asetId}`} className="text-cyan-700 hover:underline">
-                          {u.kodeAset}
-                        </Link>
-                      </TableCell>
-                      <TableCell>{u.namaAset}</TableCell>
-                      <TableCell>{u.kategoriNama}</TableCell>
-                      <TableCell>
-                        {u.kondisiKeluar ? (
-                          <Badge color={KONDISI[u.kondisiKeluar].color} className="w-fit">{KONDISI[u.kondisiKeluar].label}</Badge>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {u.kondisiMasuk ? (
-                          <Badge color={KONDISI[u.kondisiMasuk].color} className="w-fit">{KONDISI[u.kondisiMasuk].label}</Badge>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-xs whitespace-pre-line text-xs">{u.catatan ?? "-"}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <CardTitle className="mb-3">Unit Dipinjam ({p.units.length})</CardTitle>
+            <ul className="grid gap-3 md:grid-cols-2">
+              {p.units.map((u) => {
+                const kondisi = u.kondisiMasuk ? KONDISI[u.kondisiMasuk] : null;
+                return (
+                  <li key={u.detailId} className="rounded-lg border border-gray-200 p-3.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        href={`/aset/${u.asetId}`}
+                        className="font-bold text-gray-900 hover:text-brand-700 hover:underline"
+                      >
+                        {u.kodeAset}
+                      </Link>
+                      {kondisi ? (
+                        <Pill tone={kondisi.tone}>Kembali: {kondisi.label}</Pill>
+                      ) : p.terpasang && (p.status === "dipinjam" || p.status === "terlambat") ? (
+                        <Pill tone="blue">Dipinjam</Pill>
+                      ) : p.status === "dibatalkan" ? (
+                        <Pill tone="gray">Dibatalkan</Pill>
+                      ) : (
+                        <Pill tone="gray">Belum dipasang</Pill>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-[15px] break-words text-gray-900">{u.namaAset}</p>
+                    <p className="text-sm text-gray-500">{u.kategoriNama}</p>
+                    <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+                      <span className="text-gray-600">
+                        Kondisi keluar: {u.kondisiKeluar ? KONDISI[u.kondisiKeluar].label : "—"}
+                      </span>
+                      <span className="min-w-0 break-words text-gray-600">Keterangan: {u.catatan || "—"}</span>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </Card>
 
           {(p.pemasangan || p.pengembalian) && (
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-3 md:grid-cols-2 lg:gap-4">
               {p.pemasangan && (
                 <Card>
-                  <div>
-                    <h2 className="text-base font-semibold text-gray-900">Foto Pemasangan</h2>
-                    <p className="text-xs text-gray-500">
-                      {formatWita(p.pemasangan.tgl)}
-                      {p.pemasangan.staffNama && ` · ${p.pemasangan.staffNama}`}
-                    </p>
-                  </div>
+                  <FotoTitle judul="Foto Pemasangan" jumlah={p.pemasangan.foto.length} />
                   <PhotoGallery title={`Foto pemasangan ${p.kode}`} photos={p.pemasangan.foto} />
                 </Card>
               )}
               {p.pengembalian && (
                 <Card>
-                  <div>
-                    <h2 className="text-base font-semibold text-gray-900">Foto Pengembalian</h2>
-                    <p className="text-xs text-gray-500">
-                      {formatWita(p.pengembalian.tgl)}
-                      {p.pengembalian.staffNama && ` · ${p.pengembalian.staffNama}`}
-                    </p>
-                  </div>
+                  <FotoTitle judul="Foto Pengembalian" jumlah={p.pengembalian.foto.length} />
                   <PhotoGallery title={`Foto pengembalian ${p.kode}`} photos={p.pengembalian.foto} />
                 </Card>
               )}
@@ -179,28 +179,32 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-3 lg:sticky lg:top-20 lg:space-y-4">
           {(p.sebelumnya || p.sesudahnya) && (
             <Card>
-              <h2 className="text-base font-semibold text-gray-900">Rantai Perpanjangan</h2>
+              <CardTitle className="mb-2">Rantai Perpanjangan</CardTitle>
               <ol className="space-y-2 text-sm">
                 {p.sebelumnya && (
                   <li>
                     <span className="text-gray-500">Perpanjangan dari </span>
-                    <Link href={`/peminjaman/${p.sebelumnya.id}`} className="font-mono font-medium text-cyan-700 hover:underline">
+                    <Link
+                      href={`/peminjaman/${p.sebelumnya.id}`}
+                      className="font-semibold text-brand-700 hover:underline"
+                    >
                       {p.sebelumnya.kode_peminjaman}
                     </Link>
                   </li>
                 )}
                 {p.sesudahnya && (
-                  <li>
+                  <li className="flex flex-wrap items-center gap-2">
                     <span className="text-gray-500">Diperpanjang menjadi </span>
-                    <Link href={`/peminjaman/${p.sesudahnya.id}`} className="font-mono font-medium text-cyan-700 hover:underline">
+                    <Link
+                      href={`/peminjaman/${p.sesudahnya.id}`}
+                      className="font-semibold text-brand-700 hover:underline"
+                    >
                       {p.sesudahnya.kode_peminjaman}
                     </Link>
-                    <Badge color={STATUS_PEMINJAMAN[p.sesudahnya.status].color} className="ms-2 inline-flex">
-                      {STATUS_PEMINJAMAN[p.sesudahnya.status].label}
-                    </Badge>
+                    <StatusPill status={p.sesudahnya.status} />
                   </li>
                 )}
               </ol>
@@ -208,20 +212,25 @@ export default async function DetailPeminjamanPage({ params, searchParams }: Pag
           )}
 
           <Card>
-            <h2 className="text-base font-semibold text-gray-900">Timeline</h2>
+            <CardTitle className="mb-3">Timeline</CardTitle>
             <Timeline events={p.timeline} />
           </Card>
+
+          {aksi}
         </div>
       </div>
     </>
   );
 }
 
-function Info({ label, value }: { label: string; value: string }) {
+function FotoTitle({ judul, jumlah }: { judul: string; jumlah: number }) {
   return (
-    <div>
-      <dt className="text-gray-500">{label}</dt>
-      <dd className="font-medium whitespace-pre-line text-gray-900">{value}</dd>
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <CardTitle>{judul}</CardTitle>
+      <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-700">
+        <LuCamera className="h-4 w-4" aria-hidden />
+        {jumlah} foto
+      </span>
     </div>
   );
 }

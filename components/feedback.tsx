@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
-import { Alert, Button, Modal, ModalBody, ModalFooter, ModalHeader } from "flowbite-react";
+import { useCallback, useEffect, useState, useTransition, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { LuCircleCheck, LuX } from "react-icons/lu";
+import { useMounted } from "@/components/overlay";
+import { Alert } from "@/components/ui";
+
+export { ConfirmDialog } from "@/components/overlay";
 
 export type ActionResultLike =
   | { ok: true; message?: string }
@@ -30,55 +35,55 @@ export function useAction() {
   return { pending, result, run, reset, fieldError, show: setResult };
 }
 
+/** Error tampil sebagai alert di tempat; sukses tampil sebagai toast di pojok kanan bawah. */
 export function ResultAlert({
   result,
   onDismiss,
+  className = "mb-4",
 }: {
   result: ActionResultLike | null;
   onDismiss?: () => void;
+  className?: string;
 }) {
   if (!result) return null;
-  if (result.ok && !result.message) return null;
+  if (result.ok) {
+    return result.message ? <Toast onDismiss={onDismiss}>{result.message}</Toast> : null;
+  }
   return (
-    <Alert color={result.ok ? "success" : "failure"} onDismiss={onDismiss} className="mb-4">
-      {result.ok ? result.message : result.error}
+    <Alert tone="danger" onDismiss={onDismiss} className={className}>
+      {result.error}
     </Alert>
   );
 }
 
-export function ConfirmModal({
-  open,
-  title,
-  message,
-  confirmLabel = "Ya, lanjutkan",
-  color = "red",
-  pending,
-  onConfirm,
-  onClose,
-}: {
-  open: boolean;
-  title: string;
-  message: React.ReactNode;
-  confirmLabel?: string;
-  color?: "red" | "blue" | "yellow" | "green";
-  pending?: boolean;
-  onConfirm: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <Modal show={open} size="md" onClose={onClose} dismissible>
-      <ModalHeader>{title}</ModalHeader>
-      <ModalBody>
-        <div className="text-sm text-gray-600">{message}</div>
-      </ModalBody>
-      <ModalFooter className="justify-end">
-        <Button color="alternative" onClick={onClose} disabled={pending}>
-          Batal
-        </Button>
-        <Button color={color} onClick={onConfirm} disabled={pending}>
-          {confirmLabel}
-        </Button>
-      </ModalFooter>
-    </Modal>
+export function Toast({ children, onDismiss, duration = 4500 }: { children: ReactNode; onDismiss?: () => void; duration?: number }) {
+  const mounted = useMounted();
+  useEffect(() => {
+    if (!onDismiss) return;
+    const t = setTimeout(onDismiss, duration);
+    return () => clearTimeout(t);
+  }, [onDismiss, duration]);
+  if (!mounted) return null;
+
+  return createPortal(
+    <div
+      role="status"
+      aria-live="polite"
+      className="fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-[60] mx-auto flex max-w-sm animate-pop-in items-start gap-2.5 rounded-xl bg-gray-900 px-4 py-3 text-sm text-white shadow-xl lg:inset-x-auto lg:right-6 lg:bottom-6"
+    >
+      <LuCircleCheck className="mt-px h-[18px] w-[18px] shrink-0 text-green-400" aria-hidden />
+      <p className="min-w-0 flex-1 break-words">{children}</p>
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="-m-1.5 grid h-8 w-8 shrink-0 place-items-center rounded-md text-white/70 hover:bg-white/10 hover:text-white"
+          aria-label="Tutup pesan"
+        >
+          <LuX className="h-4 w-4" />
+        </button>
+      )}
+    </div>,
+    document.body,
   );
 }

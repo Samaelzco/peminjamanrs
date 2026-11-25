@@ -1,16 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  Badge,
-  Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-} from "flowbite-react";
-import { PageHeader } from "@/components/page-header";
+import { Card, CardTitle, PageHeader, Pill, StatCard } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { debugAktif } from "@/lib/debug";
 import { KONDISI, STATUS_ASET, STATUS_PEMINJAMAN, STATUS_PEMINJAMAN_LIST } from "@/lib/labels";
@@ -43,62 +33,37 @@ export default async function DebugPage() {
     <>
       <PageHeader title="Debug" description="Alat bantu pengujian dan demo." />
 
-      <div className="grid gap-6 xl:grid-cols-3">
-        <div className="space-y-6 xl:col-span-2">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start lg:gap-4">
+        <div className="space-y-3 lg:space-y-4">
           <Card>
-            <h2 className="text-base font-semibold text-gray-900">Isi Database Saat Ini</h2>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              <Stat label="Total peminjaman" nilai={peminjaman?.length ?? 0} />
+            <CardTitle className="mb-3">Isi Database Saat Ini</CardTitle>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              <StatCard label="Total peminjaman" value={peminjaman?.length ?? 0} />
               {perStatus.map((s) => (
-                <Stat key={s.status} label={STATUS_PEMINJAMAN[s.status].label} nilai={s.jumlah} />
+                <StatCard key={s.status} label={STATUS_PEMINJAMAN[s.status].label} value={s.jumlah} />
               ))}
-              <Stat label="Foto" nilai={(fotoPasang ?? 0) + (fotoKembali ?? 0)} />
-              <Stat label="Notifikasi" nilai={notif ?? 0} />
+              <StatCard label="Foto" value={(fotoPasang ?? 0) + (fotoKembali ?? 0)} />
+              <StatCard label="Notifikasi" value={notif ?? 0} />
             </div>
           </Card>
 
           <Card>
-            <h2 className="text-base font-semibold text-gray-900">Aset ({aset?.length ?? 0})</h2>
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeadCell>Kode</TableHeadCell>
-                    <TableHeadCell>Nama</TableHeadCell>
-                    <TableHeadCell>Status</TableHeadCell>
-                    <TableHeadCell>Kondisi</TableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody className="divide-y">
-                  {(aset ?? []).map((a) => (
-                    <TableRow key={a.kode_aset} className="bg-white">
-                      <TableCell className="font-mono font-medium text-gray-900">{a.kode_aset}</TableCell>
-                      <TableCell>{a.nama_aset}</TableCell>
-                      <TableCell>
-                        <Badge color={STATUS_ASET[a.status].color} className="w-fit">{STATUS_ASET[a.status].label}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge color={KONDISI[a.kondisi].color} className="w-fit">{KONDISI[a.kondisi].label}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <CardTitle className="mb-2">Barang ({aset?.length ?? 0})</CardTitle>
+            <ul className="divide-y divide-gray-100">
+              {(aset ?? []).map((a) => (
+                <li key={a.kode_aset} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
+                  <span className="font-mono font-semibold text-gray-900">{a.kode_aset}</span>
+                  <span className="min-w-0 flex-1 break-words text-gray-600">{a.nama_aset}</span>
+                  <Pill tone={STATUS_ASET[a.status].tone}>{STATUS_ASET[a.status].label}</Pill>
+                  <Pill tone={KONDISI[a.kondisi].tone}>{KONDISI[a.kondisi].label}</Pill>
+                </li>
+              ))}
+            </ul>
           </Card>
         </div>
 
         <ResetPanel />
       </div>
     </>
-  );
-}
-
-function Stat({ label, nilai }: { label: string; nilai: number }) {
-  return (
-    <div className="rounded-lg border border-gray-200 p-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-xl font-bold text-gray-900">{nilai}</p>
-    </div>
   );
 }

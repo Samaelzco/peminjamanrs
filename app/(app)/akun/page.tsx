@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { AkunTable } from "./akun-table";
@@ -21,7 +21,7 @@ export default async function AkunPage() {
 
   return (
     <>
-      <PageHeader title="Kelola Akun" description="Akun hanya dapat dibuat oleh administrator." />
+      <PageHeader title="Kelola Akun" description="Admin membuat dan mengatur akun pengguna" />
       <AkunTable
         akun={(akun ?? []).map((a) => ({
           id: a.id,

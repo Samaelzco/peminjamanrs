@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Alert, Button, Card, HelperText, Label, Select, Spinner, Textarea, TextInput } from "flowbite-react";
 import { DateTimeField } from "@/components/datetime-field";
+import { Alert, Button, ButtonLink, Card, CardTitle, Field, Input, Select, Textarea } from "@/components/ui";
 import { STATUS_PEMINJAMAN, type StatusPeminjaman } from "@/lib/labels";
 import { BATAS, hanyaAngka } from "@/lib/validation";
 import { ubahPeminjaman } from "../../actions";
@@ -47,7 +46,7 @@ export function UbahForm({
   return (
     <form
       noValidate
-      className="grid gap-6 xl:grid-cols-2"
+      className="grid gap-3 lg:grid-cols-2 lg:items-start lg:gap-4"
       onSubmit={(e) => {
         e.preventDefault();
         const fd = new FormData(e.currentTarget);
@@ -75,46 +74,45 @@ export function UbahForm({
       }}
     >
       <Card>
-        <h2 className="text-base font-semibold text-gray-900">Data Peminjam</h2>
+        <CardTitle className="mb-3">Data Peminjam</CardTitle>
         <div className="space-y-4">
-          <Field id="nama_peminjam" label="Nama peminjam" error={fe("nama_peminjam")}>
-            <TextInput id="nama_peminjam" name="nama_peminjam" defaultValue={awal.nama_peminjam} maxLength={BATAS.namaOrang} required />
+          <Field id="nama_peminjam" label="Nama Peminjam" error={fe("nama_peminjam")}>
+            <Input id="nama_peminjam" name="nama_peminjam" defaultValue={awal.nama_peminjam} maxLength={BATAS.namaOrang} invalid={!!fe("nama_peminjam")} required />
           </Field>
-          <Field id="kontak_peminjam" label="Nomor kontak" error={fe("kontak_peminjam")}>
-            <TextInput
+          <Field id="kontak_peminjam" label="Nomor Kontak" error={fe("kontak_peminjam")}>
+            <Input
               id="kontak_peminjam"
               type="tel"
               inputMode="numeric"
               maxLength={BATAS.kontakMax}
               value={kontak}
               onChange={(e) => setKontak(hanyaAngka(e.target.value).slice(0, BATAS.kontakMax))}
+              invalid={!!fe("kontak_peminjam")}
               required
             />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="divisi_peminjam" label="Divisi" error={fe("divisi_peminjam")}>
-              <TextInput id="divisi_peminjam" name="divisi_peminjam" defaultValue={awal.divisi_peminjam} maxLength={BATAS.divisi} required />
+            <Field id="divisi_peminjam" label="Unit Peminjam" error={fe("divisi_peminjam")}>
+              <Input id="divisi_peminjam" name="divisi_peminjam" defaultValue={awal.divisi_peminjam} maxLength={BATAS.divisi} invalid={!!fe("divisi_peminjam")} required />
             </Field>
             <Field id="ruangan" label="Ruangan" error={fe("ruangan")}>
-              <TextInput id="ruangan" name="ruangan" defaultValue={awal.ruangan} maxLength={BATAS.ruangan} required />
+              <Input id="ruangan" name="ruangan" defaultValue={awal.ruangan} maxLength={BATAS.ruangan} invalid={!!fe("ruangan")} required />
             </Field>
           </div>
-          <Field id="keperluan" label="Keperluan" error={fe("keperluan")}>
-            <Textarea id="keperluan" name="keperluan" rows={4} defaultValue={awal.keperluan} maxLength={BATAS.keperluanDb} required />
+          <Field id="keperluan" label="Alasan Peminjaman" error={fe("keperluan")}>
+            <Textarea id="keperluan" name="keperluan" rows={4} defaultValue={awal.keperluan} maxLength={BATAS.keperluanDb} invalid={!!fe("keperluan")} required />
           </Field>
         </div>
       </Card>
 
-      <div className="space-y-6">
+      <div className="space-y-3 lg:sticky lg:top-20 lg:space-y-4">
         <Card>
-          <h2 className="text-base font-semibold text-gray-900">Jadwal (WITA)</h2>
+          <CardTitle className="mb-3">Jadwal (WITA)</CardTitle>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="tgl_peminjaman" className="mb-1.5 block">Tanggal & jam keluar</Label>
+            <Field id="tgl_peminjaman" label="Tanggal Keluar">
               <DateTimeField id="tgl_peminjaman" name="tgl_peminjaman" defaultValue={awal.tgl_peminjaman} required error={fe("tgl_peminjaman")} />
-            </div>
-            <div>
-              <Label htmlFor="tgl_rencana_kembali" className="mb-1.5 block">Rencana kembali</Label>
+            </Field>
+            <Field id="tgl_rencana_kembali" label="Tanggal Kembali">
               <DateTimeField
                 id="tgl_rencana_kembali"
                 name="tgl_rencana_kembali"
@@ -122,12 +120,13 @@ export function UbahForm({
                 required
                 error={fe("tgl_rencana_kembali")}
               />
-            </div>
+            </Field>
           </div>
         </Card>
 
         <Card>
-          <h2 className="text-base font-semibold text-gray-900">Status</h2>
+          <CardTitle className="mb-3">Status</CardTitle>
+          <div className="space-y-4">
           <Field id="status" label={`Status (unit ${terpasang ? "sudah" : "belum"} dipasang)`} error={fe("status")}>
             <Select
               id="status"
@@ -141,23 +140,23 @@ export function UbahForm({
             </Select>
           </Field>
           {statusDikunci && <p className="text-sm text-gray-500">{statusDikunci}</p>}
-          {status !== awal.status && KET_STATUS[status] && <Alert color="warning">{KET_STATUS[status]}</Alert>}
+          {status !== awal.status && KET_STATUS[status] && <Alert tone="warning">{KET_STATUS[status]}</Alert>}
           <Field id="keterangan" label="Keterangan perubahan (opsional)" error={fe("keterangan")}>
             <Textarea id="keterangan" name="keterangan" rows={2} maxLength={BATAS.alasan} placeholder="Mis. salah input nomor kontak" />
           </Field>
+          </div>
         </Card>
 
         {error && (
-          <Alert color="failure" onDismiss={() => setError(null)}>
+          <Alert tone="danger" onDismiss={() => setError(null)}>
             {error}
           </Alert>
         )}
-        <div className="flex justify-end gap-2">
-          <Button as={Link} href={`/peminjaman/${peminjamanId}`} color="alternative">
+        <div className="grid grid-cols-2 gap-3">
+          <ButtonLink href={`/peminjaman/${peminjamanId}`} variant="secondary">
             Batal
-          </Button>
-          <Button type="submit" disabled={pending}>
-            {pending && <Spinner size="sm" className="me-2" />}
+          </ButtonLink>
+          <Button type="submit" loading={pending}>
             Simpan Perubahan
           </Button>
         </div>
@@ -166,12 +165,3 @@ export function UbahForm({
   );
 }
 
-function Field({ id, label, error, children }: { id: string; label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <Label htmlFor={id} className="mb-1.5 block">{label}</Label>
-      {children}
-      {error && <HelperText color="failure">{error}</HelperText>}
-    </div>
-  );
-}

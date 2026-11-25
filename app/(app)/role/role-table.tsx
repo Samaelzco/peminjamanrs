@@ -1,27 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import {
-  Badge,
-  Button,
-  HelperText,
-  Label,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-  Textarea,
-  TextInput,
-} from "flowbite-react";
-import { HiOutlineKey, HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
-import { ConfirmModal, ResultAlert, useAction } from "@/components/feedback";
+import { LuKeyRound, LuPlus } from "react-icons/lu";
+import { ConfirmDialog, ResultAlert, useAction } from "@/components/feedback";
+import { Sheet, SheetActions } from "@/components/overlay";
+import { Button, ButtonLink, Field, Input, Pill, Textarea } from "@/components/ui";
 import { BATAS } from "@/lib/validation";
 import { createRole, deleteRole, updateRole } from "./actions";
 
@@ -51,73 +34,55 @@ export function RoleTable({
       <ResultAlert result={page.result} onDismiss={page.reset} />
 
       {canManage && (
-        <div className="mb-4 flex justify-end">
-          <Button onClick={() => setForm({})}>
-            <HiOutlinePlus className="me-1.5 h-4 w-4" />
+        <div className="mb-3 flex sm:justify-end">
+          <Button block className="sm:w-auto" onClick={() => setForm({})}>
+            <LuPlus className="h-4 w-4" aria-hidden />
             Tambah Role
           </Button>
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <Table hoverable>
-          <TableHead>
-            <TableRow>
-              <TableHeadCell>Role</TableHeadCell>
-              <TableHeadCell>Deskripsi</TableHeadCell>
-              <TableHeadCell>Akun</TableHeadCell>
-              <TableHeadCell>Permission</TableHeadCell>
-              <TableHeadCell>
-                <span className="sr-only">Aksi</span>
-              </TableHeadCell>
-            </TableRow>
-          </TableHead>
-          <TableBody className="divide-y">
-            {roles.map((r) => (
-              <TableRow key={r.id} className="bg-white">
-                <TableCell className="font-medium text-gray-900">
-                  {r.nama}
-                  {r.id === currentRoleId && (
-                    <Badge color="info" className="ms-2 inline-flex">Role Anda</Badge>
-                  )}
-                </TableCell>
-                <TableCell className="max-w-xs">{r.deskripsi ?? "-"}</TableCell>
-                <TableCell>{r.jumlahAkun}</TableCell>
-                <TableCell>{r.jumlahPermission}</TableCell>
-                <TableCell>
-                  <div className="flex justify-end gap-2">
-                    <Button as={Link} href={`/role/${r.id}`} size="xs" color="light">
-                      <HiOutlineKey className="me-1 h-4 w-4" />
-                      {canManage ? "Atur Permission" : "Lihat Permission"}
-                    </Button>
-                    {canManage && (
-                      <>
-                        <Button size="xs" color="light" onClick={() => setForm({ role: r })}>
-                          <HiOutlinePencilSquare className="me-1 h-4 w-4" />
-                          Edit
-                        </Button>
-                        <Button
-                          size="xs"
-                          color="red"
-                          disabled={r.jumlahAkun > 0}
-                          title={r.jumlahAkun > 0 ? "Role masih dipakai akun" : undefined}
-                          onClick={() => setHapus(r)}
-                        >
-                          <HiOutlineTrash className="me-1 h-4 w-4" />
-                          Hapus
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      <ul className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {roles.map((r) => (
+          <li key={r.id} className="flex flex-col rounded-xl border border-gray-200 bg-white p-4">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <p className="text-[15px] font-bold break-words text-gray-900">{r.nama}</p>
+              {r.id === currentRoleId && <Pill tone="blue">Role Anda</Pill>}
+            </div>
+            <p className="mt-1 text-sm break-words text-gray-600">{r.deskripsi ?? "-"}</p>
+            <p className="mt-2 text-xs text-gray-500">
+              {r.jumlahAkun} akun · {r.jumlahPermission} permission
+            </p>
+            <div className="mt-auto flex flex-wrap items-center gap-1 pt-3">
+              <ButtonLink href={`/role/${r.id}`} variant="secondary" size="sm" className="me-auto">
+                <LuKeyRound className="h-4 w-4" aria-hidden />
+                {canManage ? "Atur Permission" : "Lihat Permission"}
+              </ButtonLink>
+              {canManage && (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => setForm({ role: r })} aria-label={`Edit ${r.nama}`}>
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-800 hover:bg-red-50"
+                    disabled={r.jumlahAkun > 0}
+                    title={r.jumlahAkun > 0 ? "Role masih dipakai akun" : undefined}
+                    onClick={() => setHapus(r)}
+                    aria-label={`Hapus ${r.nama}`}
+                  >
+                    Hapus
+                  </Button>
+                </>
+              )}
+            </div>
+          </li>
+        ))}
+      </ul>
 
       {form && (
-        <RoleFormModal
+        <RoleSheet
           key={form.role?.id ?? "baru"}
           role={form.role}
           onClose={() => setForm(null)}
@@ -128,10 +93,15 @@ export function RoleTable({
         />
       )}
 
-      <ConfirmModal
+      <ConfirmDialog
         open={!!hapus}
-        title="Hapus role"
-        message={`Role "${hapus?.nama}" akan dihapus permanen. Lanjutkan?`}
+        title="Hapus Role?"
+        message={
+          <>
+            Role <strong className="text-gray-900">{hapus?.nama}</strong> akan dihapus permanen. Tindakan ini tidak bisa
+            dibatalkan.
+          </>
+        }
         confirmLabel="Hapus"
         pending={page.pending}
         onClose={() => setHapus(null)}
@@ -145,7 +115,7 @@ export function RoleTable({
   );
 }
 
-function RoleFormModal({
+function RoleSheet({
   role,
   onClose,
   onSaved,
@@ -170,30 +140,46 @@ function RoleFormModal({
   }
 
   return (
-    <Modal show size="md" onClose={onClose} dismissible>
-      <ModalHeader>{role ? "Edit Role" : "Tambah Role"}</ModalHeader>
-      <form onSubmit={(e) => { e.preventDefault(); submit(new FormData(e.currentTarget)); }}>
-        <ModalBody>
-          {action.result && !action.result.ok && <ResultAlert result={action.result} />}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="nama" className="mb-1.5 block">Nama role</Label>
-              <TextInput id="nama" name="nama" maxLength={BATAS.namaRole} defaultValue={role?.nama} required color={err("nama") ? "failure" : undefined} />
-              {err("nama") && <HelperText color="failure">{err("nama")}</HelperText>}
-            </div>
-            <div>
-              <Label htmlFor="deskripsi" className="mb-1.5 block">Deskripsi</Label>
-              <Textarea id="deskripsi" name="deskripsi" rows={3} maxLength={BATAS.deskripsiRole} defaultValue={role?.deskripsi ?? ""} />
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter className="justify-end">
-          <Button color="alternative" onClick={onClose} disabled={action.pending}>Batal</Button>
-          <Button type="submit" disabled={action.pending}>
-            {action.pending ? "Menyimpan..." : "Simpan"}
+    <Sheet
+      open
+      onClose={onClose}
+      title={role ? "Edit Role" : "Tambah Role"}
+      dismissible={!action.pending}
+      footer={
+        <SheetActions>
+          <Button variant="secondary" onClick={onClose} disabled={action.pending}>
+            Batal
           </Button>
-        </ModalFooter>
+          <Button type="submit" form="form-role" loading={action.pending}>
+            Simpan
+          </Button>
+        </SheetActions>
+      }
+    >
+      <form
+        id="form-role"
+        className="space-y-4"
+        onSubmit={(e) => {
+          e.preventDefault();
+          submit(new FormData(e.currentTarget));
+        }}
+      >
+        {action.result && !action.result.ok && <ResultAlert result={action.result} className="" />}
+        <Field id="nama" label="Nama Role" error={err("nama")}>
+          <Input
+            id="nama"
+            name="nama"
+            maxLength={BATAS.namaRole}
+            defaultValue={role?.nama}
+            invalid={!!err("nama")}
+            data-autofocus
+            required
+          />
+        </Field>
+        <Field id="deskripsi" label="Deskripsi">
+          <Textarea id="deskripsi" name="deskripsi" rows={3} maxLength={BATAS.deskripsiRole} defaultValue={role?.deskripsi ?? ""} />
+        </Field>
       </form>
-    </Modal>
+    </Sheet>
   );
 }

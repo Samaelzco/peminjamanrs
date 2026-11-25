@@ -1,16 +1,91 @@
 @import "tailwindcss";
-@import "flowbite-react/plugin/tailwindcss";
-@source "../.flowbite-react/class-list.json";
 
+/*
+ * Token desain mengikuti wireframe Figma "Sistem Peminjaman Barang RSUP Prof. Ngoerah".
+ * Ganti skala `brand` di sini bila warna utama berubah.
+ */
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-html {
-  color-scheme: light;
+@theme {
+  /* Teal Kemenkes */
+  --color-brand-50: #eef8f7;
+  --color-brand-100: #d3eeeb;
+  --color-brand-200: #a9ddd7;
+  --color-brand-300: #74c4bb;
+  --color-brand-400: #43a49a;
+  --color-brand-500: #23877e;
+  --color-brand-600: #137a72;
+  --color-brand-700: #0b6e69;
+  --color-brand-800: #0c5753;
+  --color-brand-900: #0d4845;
+  --color-brand-950: #032b29;
+
+  /* Latar halaman abu-abu dingin dari wireframe */
+  --color-canvas: #f4f5f7;
+  --color-ink: #1f2933;
+
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --animate-fade-in: fade-in 200ms var(--ease-out-soft);
+  --animate-sheet-in: sheet-in 300ms var(--ease-out-soft);
+  --animate-pop-in: pop-in 220ms var(--ease-out-soft);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes sheet-in {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes pop-in {
+    from { opacity: 0; transform: translateY(8px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
 }
 
-body {
-  @apply bg-gray-50 text-gray-900;
+/* Di layer base supaya utilitas Tailwind (mis. focus:outline-none) tetap bisa menimpa. */
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+  }
+
+  ::selection {
+    background-color: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+
+  /* Hindari zoom otomatis iOS: input minimal 16px di ponsel. */
+  @media (max-width: 639px) {
+    input:not([type="radio"]):not([type="checkbox"]),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

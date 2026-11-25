@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { PermissionToggles } from "./permission-toggles";
@@ -45,10 +44,11 @@ export default async function RolePermissionPage({ params }: PageProps<"/role/[i
 
   return (
     <>
-      <Link href="/role" className="mb-2 inline-block text-sm text-cyan-700 hover:underline">
-        ← Kembali ke daftar role
-      </Link>
-      <PageHeader title={`Permission: ${role.nama}`} description={role.deskripsi ?? undefined} />
+      <PageHeader
+        back={{ href: "/role", label: "Kembali ke daftar role" }}
+        title={`Permission · ${role.nama}`}
+        description={role.deskripsi ?? undefined}
+      />
       <PermissionToggles
         roleId={role.id}
         isOwnRole={role.id === user.roleId}

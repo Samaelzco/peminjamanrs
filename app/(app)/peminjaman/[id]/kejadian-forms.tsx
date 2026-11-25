@@ -2,22 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import {
-  Alert,
-  Button,
-  Card,
-  Label,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
-  Radio,
-  Select,
-  Spinner,
-  Textarea,
-} from "flowbite-react";
-import { HiOutlineArrowsRightLeft } from "react-icons/hi2";
+import { LuArrowLeftRight } from "react-icons/lu";
+import { Sheet, SheetActions } from "@/components/overlay";
 import { PhotoPicker, type PickedPhoto } from "@/components/photo-picker";
+import { Alert, Button, Card, CardTitle, Field, Label, RadioChip, Select, Spinner, Textarea } from "@/components/ui";
 import { removePhotos, uploadPhotos } from "@/lib/upload";
 import { BATAS } from "@/lib/validation";
 import { opsiGantiUnit, type UnitTersedia } from "../actions";
@@ -77,6 +65,34 @@ function useSubmitDenganFoto(jenis: "pemasangan" | "pengembalian", peminjamanId:
   return { pending, tahap, error, setError, submit };
 }
 
+
+function UnitKepala({ u, keterangan }: { u: UnitForm; keterangan: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="font-bold break-words text-gray-900">
+        {u.kodeAset} · <span className="font-semibold">{u.namaAset}</span>
+      </p>
+      <p className="text-sm text-gray-500">{keterangan}</p>
+    </div>
+  );
+}
+
+function TombolSimpan({ tahap, pending, children }: { tahap: string | null; pending: boolean; children: string }) {
+  return (
+    <div className="space-y-2 lg:flex lg:items-center lg:justify-end lg:gap-3 lg:space-y-0">
+      {tahap && (
+        <p className="flex items-center justify-center gap-2 text-sm text-gray-500" aria-live="polite">
+          <Spinner className="h-4 w-4" />
+          {tahap}
+        </p>
+      )}
+      <Button type="submit" block loading={pending} className="lg:w-auto lg:min-w-64">
+        {children}
+      </Button>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------
 // Pemasangan
 // ---------------------------------------------------------------------
@@ -107,60 +123,74 @@ export function PemasanganForm({ peminjamanId, units }: { peminjamanId: number; 
           }),
         );
       }}
-      className="space-y-6"
+      className="space-y-3 lg:space-y-4"
     >
-      {info && <Alert color="success" onDismiss={() => setInfo(null)}>{info}</Alert>}
+      {info && (
+        <Alert tone="success" onDismiss={() => setInfo(null)}>
+          {info}
+        </Alert>
+      )}
 
-      <Card>
-        <h2 className="text-base font-semibold text-gray-900">Kondisi Keluar per Unit</h2>
-        <ul className="divide-y divide-gray-100">
-          {units.map((u) => (
-            <li key={u.detailId} className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="font-mono font-semibold text-gray-900">{u.kodeAset}</p>
-                <p className="text-sm text-gray-500">{u.namaAset} · {u.kategoriNama}</p>
-                {u.statusAset !== "tersedia" && (
-                  <p className="text-xs text-red-600">Status aset saat ini: {u.statusAset}. Ganti unit ini.</p>
-                )}
-              </div>
-              <div className="flex flex-wrap items-center gap-4">
-                <fieldset className="flex gap-4" aria-label={`Kondisi keluar ${u.kodeAset}`}>
-                  {(["baik", "rusak"] as const).map((k) => (
-                    <label key={k} className="flex items-center gap-2 text-sm">
-                      <Radio
-                        name={`kondisi-${u.detailId}`}
-                        value={k}
-                        checked={kondisi[u.detailId] === k}
-                        onChange={() => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
-                        disabled={s.pending}
-                      />
-                      {k === "baik" ? "Baik" : "Rusak"}
-                    </label>
-                  ))}
-                </fieldset>
-                <Button size="xs" color="light" type="button" onClick={() => setGanti(u)} disabled={s.pending}>
-                  <HiOutlineArrowsRightLeft className="me-1 h-4 w-4" />
+      <ul className="grid gap-3 md:grid-cols-2 lg:gap-4">
+        {units.map((u) => (
+          <li key={u.detailId}>
+            <Card as="div" className="h-full">
+              <div className="flex items-start justify-between gap-2">
+                <UnitKepala u={u} keterangan={`Kategori ${u.kategoriNama}`} />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setGanti(u)}
+                  disabled={s.pending}
+                  className="-me-2 shrink-0"
+                >
+                  <LuArrowLeftRight className="h-4 w-4" aria-hidden />
                   Ganti Unit
                 </Button>
               </div>
-            </li>
-          ))}
-        </ul>
-      </Card>
+              {u.statusAset !== "tersedia" && (
+                <Alert tone="warning" className="mt-3">
+                  Status barang saat ini: {u.statusAset}. Ganti unit ini.
+                </Alert>
+              )}
+              <fieldset className="mt-3">
+                <legend className="mb-1.5 text-sm font-semibold text-gray-900">Hasil Tes / Kondisi Keluar</legend>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["baik", "rusak"] as const).map((k) => (
+                    <RadioChip
+                      key={k}
+                      name={`kondisi-${u.detailId}`}
+                      value={k}
+                      checked={kondisi[u.detailId] === k}
+                      onChange={() => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
+                      disabled={s.pending}
+                    >
+                      {k === "baik" ? "Baik" : "Rusak"}
+                    </RadioChip>
+                  ))}
+                </div>
+              </fieldset>
+            </Card>
+          </li>
+        ))}
+      </ul>
 
       <Card>
-        <h2 className="text-base font-semibold text-gray-900">Foto Pemasangan</h2>
+        <CardTitle className="mb-3">Foto Bukti Pemasangan Barang</CardTitle>
         <PhotoPicker photos={photos} onChange={setPhotos} disabled={s.pending} />
       </Card>
 
-      {s.error && <Alert color="failure" onDismiss={() => s.setError(null)}>{s.error}</Alert>}
-      <div className="flex items-center justify-end gap-3">
-        {s.tahap && <span className="flex items-center gap-2 text-sm text-gray-500"><Spinner size="sm" />{s.tahap}</span>}
-        <Button type="submit" size="lg" disabled={s.pending}>Simpan Pemasangan</Button>
-      </div>
+      {s.error && (
+        <Alert tone="danger" onDismiss={() => s.setError(null)}>
+          {s.error}
+        </Alert>
+      )}
+      <TombolSimpan tahap={s.tahap} pending={s.pending}>
+        Simpan Pemasangan
+      </TombolSimpan>
 
       {ganti && (
-        <GantiUnitModal
+        <GantiUnitSheet
           unit={ganti}
           semuaAsetId={semuaAsetId}
           onClose={() => setGanti(null)}
@@ -179,7 +209,7 @@ export function PemasanganForm({ peminjamanId, units }: { peminjamanId: number; 
   );
 }
 
-function GantiUnitModal({
+function GantiUnitSheet({
   unit,
   semuaAsetId,
   onClose,
@@ -193,6 +223,7 @@ function GantiUnitModal({
   const [opsi, setOpsi] = useState<UnitTersedia[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const formId = `ganti-${unit.detailId}`;
 
   useEffect(() => {
     let aktif = true;
@@ -207,11 +238,28 @@ function GantiUnitModal({
   }, [unit.kategoriId, semuaAsetId]);
 
   return (
-    <Modal show size="md" onClose={onClose} dismissible>
-      <ModalHeader>Ganti Unit {unit.kodeAset}</ModalHeader>
+    <Sheet
+      open
+      onClose={onClose}
+      title={`Ganti Unit ${unit.kodeAset}`}
+      description={`Pilih unit ${unit.kategoriNama} lain yang tersedia`}
+      footer={
+        <SheetActions>
+          <Button variant="secondary" onClick={onClose} disabled={pending}>
+            Batal
+          </Button>
+          <Button type="submit" form={formId} loading={pending} disabled={!opsi?.length}>
+            Ganti Unit
+          </Button>
+        </SheetActions>
+      }
+    >
       <form
+        id={formId}
+        className="space-y-4"
         onSubmit={(e) => {
           e.preventDefault();
+          e.stopPropagation();
           const fd = new FormData(e.currentTarget);
           startTransition(async () => {
             const res = await gantiUnit(unit.detailId, Number(fd.get("aset_baru")), String(fd.get("alasan") ?? ""));
@@ -220,38 +268,39 @@ function GantiUnitModal({
           });
         }}
       >
-        <ModalBody>
-          {error && <Alert color="failure" className="mb-4">{error}</Alert>}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="aset_baru" className="mb-1.5 block">Unit pengganti ({unit.kategoriNama})</Label>
-              {opsi === null ? (
-                <Spinner size="sm" />
-              ) : opsi.length === 0 ? (
-                <p className="text-sm text-gray-500">Tidak ada unit lain yang tersedia di kategori ini.</p>
-              ) : (
-                <Select id="aset_baru" name="aset_baru" required defaultValue="">
-                  <option value="" disabled>Pilih unit</option>
-                  {opsi.map((o) => (
-                    <option key={o.id} value={o.id}>{o.kode_aset} — {o.nama_aset}</option>
-                  ))}
-                </Select>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="alasan" className="mb-1.5 block">Alasan</Label>
-              <Textarea id="alasan" name="alasan" rows={2} required maxLength={BATAS.alasan} placeholder="Contoh: tidak menyala saat dites" />
-            </div>
-          </div>
-        </ModalBody>
-        <ModalFooter className="justify-end">
-          <Button color="alternative" onClick={onClose} disabled={pending}>Batal</Button>
-          <Button type="submit" disabled={pending || !opsi?.length}>
-            {pending ? "Mengganti..." : "Ganti Unit"}
-          </Button>
-        </ModalFooter>
+        {error && <Alert tone="danger">{error}</Alert>}
+        {opsi === null ? (
+          <p className="flex items-center gap-2 text-sm text-gray-500">
+            <Spinner className="h-4 w-4" /> Memuat unit tersedia...
+          </p>
+        ) : opsi.length === 0 ? (
+          <p className="text-sm text-gray-500">Tidak ada unit lain yang tersedia di kategori ini.</p>
+        ) : (
+          <Field id="aset_baru" label="Unit pengganti">
+            <Select id="aset_baru" name="aset_baru" required defaultValue="">
+              <option value="" disabled>
+                Pilih unit
+              </option>
+              {opsi.map((o) => (
+                <option key={o.id} value={o.id}>
+                  {o.kode_aset} — {o.nama_aset}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+        <Field id="alasan" label="Alasan">
+          <Textarea
+            id="alasan"
+            name="alasan"
+            rows={3}
+            required
+            maxLength={BATAS.alasan}
+            placeholder="Contoh: tidak menyala saat dites"
+          />
+        </Field>
       </form>
-    </Modal>
+    </Sheet>
   );
 }
 
@@ -259,6 +308,12 @@ function GantiUnitModal({
 // Pengembalian
 // ---------------------------------------------------------------------
 type KondisiMasuk = "baik" | "rusak" | "hilang";
+
+const PILIHAN_MASUK: { k: KondisiMasuk; label: string }[] = [
+  { k: "baik", label: "Baik" },
+  { k: "rusak", label: "Rusak" },
+  { k: "hilang", label: "Tidak Ditemukan (Hilang)" },
+];
 
 export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number; units: UnitForm[] }) {
   const [kondisi, setKondisi] = useState<Record<number, KondisiMasuk>>({});
@@ -268,7 +323,9 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
   const s = useSubmitDenganFoto("pengembalian", peminjamanId);
 
   const butuhCatatan = (id: number) => kondisi[id] === "rusak" || kondisi[id] === "hilang";
-  const kurang = units.filter((u) => !kondisi[u.detailId] || (butuhCatatan(u.detailId) && !catatan[u.detailId]?.trim()));
+  const kurang = units.filter(
+    (u) => !kondisi[u.detailId] || (butuhCatatan(u.detailId) && !catatan[u.detailId]?.trim()),
+  );
 
   return (
     <form
@@ -276,7 +333,9 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
         e.preventDefault();
         setCobaSimpan(true);
         if (kurang.length) {
-          s.setError(`Lengkapi kondisi masuk (dan catatan untuk rusak/hilang): ${kurang.map((u) => u.kodeAset).join(", ")}.`);
+          s.setError(
+            `Lengkapi kondisi masuk (dan catatan untuk rusak/hilang): ${kurang.map((u) => u.kodeAset).join(", ")}.`,
+          );
           return;
         }
         s.submit(photos, (id, foto) =>
@@ -292,59 +351,79 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
           }),
         );
       }}
-      className="space-y-6"
+      className="space-y-3 lg:space-y-4"
     >
-      <Card>
-        <h2 className="text-base font-semibold text-gray-900">Kondisi Masuk per Unit</h2>
-        <ul className="divide-y divide-gray-100">
-          {units.map((u) => (
-            <li key={u.detailId} className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-              <div>
-                <p className="font-mono font-semibold text-gray-900">{u.kodeAset}</p>
-                <p className="text-sm text-gray-500">{u.namaAset} · {u.kategoriNama}</p>
-                {u.kondisiKeluar && <p className="text-xs text-gray-400">Kondisi keluar: {u.kondisiKeluar}</p>}
-              </div>
-              <div className="space-y-2">
-                <fieldset className="flex flex-wrap gap-4" aria-label={`Kondisi masuk ${u.kodeAset}`}>
-                  {(["baik", "rusak", "hilang"] as const).map((k) => (
-                    <label key={k} className="flex items-center gap-2 text-sm">
-                      <Radio
+      <ul className="grid gap-3 md:grid-cols-2 lg:gap-4">
+        {units.map((u) => {
+          const wajib = butuhCatatan(u.detailId);
+          const kosong = cobaSimpan && wajib && !catatan[u.detailId]?.trim();
+          return (
+            <li key={u.detailId}>
+              <Card as="div" className="h-full">
+                <UnitKepala
+                  u={u}
+                  keterangan={`Kondisi keluar: ${u.kondisiKeluar ? (u.kondisiKeluar === "baik" ? "Baik" : "Rusak") : "—"}`}
+                />
+                <fieldset className="mt-3">
+                  <legend className="mb-1.5 text-sm font-semibold text-gray-900">Kondisi Saat Dicek</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {PILIHAN_MASUK.map(({ k, label }) => (
+                      <RadioChip
+                        key={k}
                         name={`masuk-${u.detailId}`}
                         value={k}
                         checked={kondisi[u.detailId] === k}
                         onChange={() => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
                         disabled={s.pending}
-                      />
-                      {k === "baik" ? "Baik" : k === "rusak" ? "Rusak" : "Hilang"}
-                    </label>
-                  ))}
+                        className={k === "hilang" ? "sm:col-span-2" : undefined}
+                      >
+                        {label}
+                      </RadioChip>
+                    ))}
+                  </div>
                 </fieldset>
-                <Textarea
-                  rows={2}
-                  placeholder={butuhCatatan(u.detailId) ? "Catatan wajib: jelaskan kerusakan / kronologi hilang" : "Catatan (opsional)"}
-                  value={catatan[u.detailId] ?? ""}
-                  onChange={(e) => setCatatan((prev) => ({ ...prev, [u.detailId]: e.target.value }))}
-                  disabled={s.pending}
-                  maxLength={BATAS.catatan}
-                  color={cobaSimpan && butuhCatatan(u.detailId) && !catatan[u.detailId]?.trim() ? "failure" : undefined}
-                  aria-label={`Catatan ${u.kodeAset}`}
-                />
-              </div>
+                <div className="mt-3">
+                  <Label htmlFor={`catatan-${u.detailId}`}>
+                    Catatan
+                    {wajib ? (
+                      <span className="text-red-700"> *</span>
+                    ) : (
+                      <span className="font-normal text-gray-500"> (opsional)</span>
+                    )}
+                  </Label>
+                  <Textarea
+                    id={`catatan-${u.detailId}`}
+                    rows={3}
+                    placeholder={wajib ? "Jelaskan kerusakan / kronologi hilang" : "Catatan kondisi barang"}
+                    value={catatan[u.detailId] ?? ""}
+                    onChange={(e) => setCatatan((prev) => ({ ...prev, [u.detailId]: e.target.value }))}
+                    disabled={s.pending}
+                    maxLength={BATAS.catatan}
+                    invalid={kosong}
+                    aria-label={`Catatan ${u.kodeAset}`}
+                  />
+                </div>
+              </Card>
             </li>
-          ))}
-        </ul>
-      </Card>
+          );
+        })}
+      </ul>
 
       <Card>
-        <h2 className="text-base font-semibold text-gray-900">Foto Pengembalian</h2>
+        <CardTitle className="mb-3">
+          Foto Bukti Pengembalian Barang<span className="text-red-700">*</span>
+        </CardTitle>
         <PhotoPicker photos={photos} onChange={setPhotos} disabled={s.pending} />
       </Card>
 
-      {s.error && <Alert color="failure" onDismiss={() => s.setError(null)}>{s.error}</Alert>}
-      <div className="flex items-center justify-end gap-3">
-        {s.tahap && <span className="flex items-center gap-2 text-sm text-gray-500"><Spinner size="sm" />{s.tahap}</span>}
-        <Button type="submit" size="lg" color="green" disabled={s.pending}>Simpan Pengembalian</Button>
-      </div>
+      {s.error && (
+        <Alert tone="danger" onDismiss={() => s.setError(null)}>
+          {s.error}
+        </Alert>
+      )}
+      <TombolSimpan tahap={s.tahap} pending={s.pending}>
+        Simpan Pengembalian
+      </TombolSimpan>
     </form>
   );
 }

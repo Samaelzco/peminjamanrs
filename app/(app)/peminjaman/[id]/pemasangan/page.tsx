@@ -1,15 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Alert } from "flowbite-react";
-import { PageHeader } from "@/components/page-header";
+import { Alert, PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { formatWita } from "@/lib/datetime";
 import { STATUS_PEMINJAMAN } from "@/lib/labels";
 import { getPeminjaman } from "@/lib/peminjaman";
 import { PemasanganForm } from "../kejadian-forms";
+import { RingkasanPeminjaman } from "../ringkasan-peminjaman";
 
-export const metadata: Metadata = { title: "Pemasangan" };
+export const metadata: Metadata = { title: "Validasi Pemasangan" };
 
 export default async function PemasanganPage({ params }: PageProps<"/peminjaman/[id]/pemasangan">) {
   await requirePermission("pemasangan.create");
@@ -19,21 +17,28 @@ export default async function PemasanganPage({ params }: PageProps<"/peminjaman/
   const p = await getPeminjaman(pid);
   if (!p) notFound();
 
+  const bisa = (p.status === "diajukan" || p.status === "terlambat") && !p.terpasang;
+
   return (
     <>
-      <Link href={`/peminjaman/${p.id}`} className="mb-2 inline-block text-sm text-cyan-700 hover:underline">
-        ← Kembali ke {p.kode}
-      </Link>
       <PageHeader
-        title={`Pemasangan ${p.kode}`}
-        description={`${p.namaPeminjam} · ${p.divisi} · ${p.ruangan} · keluar ${formatWita(p.tglPeminjaman)}`}
+        back={{ href: `/peminjaman/${p.id}`, label: `Kembali ke ${p.kode}` }}
+        title={`Validasi Pemasangan · ${p.kode}`}
+        description="Tes alat, pasang di lokasi, lalu foto bukti pemasangan"
       />
-      {!((p.status === "diajukan" || p.status === "terlambat") && !p.terpasang) ? (
-        <Alert color="warning">
-          Pemasangan hanya untuk peminjaman yang unitnya belum dipasang. Status sekarang: {STATUS_PEMINJAMAN[p.status].label}.
+      {!bisa ? (
+        <Alert tone="warning">
+          Pemasangan hanya untuk peminjaman yang unitnya belum dipasang. Status sekarang:{" "}
+          {STATUS_PEMINJAMAN[p.status].label}.
         </Alert>
       ) : (
-        <PemasanganForm peminjamanId={p.id} units={p.units} />
+        <div className="space-y-3 lg:space-y-4">
+          {p.status === "terlambat" && (
+            <Alert tone="danger">Rencana kembali sudah lewat, tetapi unit belum dipasang.</Alert>
+          )}
+          <RingkasanPeminjaman p={p} />
+          <PemasanganForm peminjamanId={p.id} units={p.units} />
+        </div>
       )}
     </>
   );

@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useTransition } from "react";
-import { Button, Select, Spinner, TextInput } from "flowbite-react";
-import { HiOutlineMagnifyingGlass } from "react-icons/hi2";
+import { useTransition, type ReactNode } from "react";
+import { LuSearch } from "react-icons/lu";
+import { Card, Field, Input, Select, Spinner } from "@/components/ui";
 import { KONDISI, KONDISI_ASET_LIST, STATUS_ASET, STATUS_ASET_LIST } from "@/lib/labels";
 import { BATAS } from "@/lib/validation";
 
@@ -12,9 +12,11 @@ type Value = { kategori: string; status: string; kondisi: string; q: string };
 export function AsetFilters({
   kategori,
   value,
+  aksi,
 }: {
   kategori: { id: number; nama: string }[];
   value: Value;
+  aksi?: ReactNode;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -28,45 +30,67 @@ export function AsetFilters({
   }
 
   return (
-    <div className="mb-4 flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 lg:flex-row lg:items-center">
-      <form
-        className="flex flex-1 gap-2"
-        onSubmit={(e) => {
-          e.preventDefault();
-          apply({ q: String(new FormData(e.currentTarget).get("q") ?? "") });
-        }}
-      >
-        <TextInput
-          name="q"
-          defaultValue={value.q}
-          placeholder="Cari kode atau nama aset"
-          maxLength={BATAS.cari}
-          icon={HiOutlineMagnifyingGlass}
-          className="flex-1"
-        />
-        <Button type="submit" color="light">Cari</Button>
-      </form>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:flex">
-        <Select value={value.kategori} onChange={(e) => apply({ kategori: e.target.value })} aria-label="Filter kategori">
-          <option value="">Semua kategori</option>
-          {kategori.map((k) => (
-            <option key={k.id} value={k.id}>{k.nama}</option>
-          ))}
-        </Select>
-        <Select value={value.status} onChange={(e) => apply({ status: e.target.value })} aria-label="Filter status">
-          <option value="">Semua status</option>
-          {STATUS_ASET_LIST.map((s) => (
-            <option key={s} value={s}>{STATUS_ASET[s].label}</option>
-          ))}
-        </Select>
-        <Select value={value.kondisi} onChange={(e) => apply({ kondisi: e.target.value })} aria-label="Filter kondisi">
-          <option value="">Semua kondisi</option>
-          {KONDISI_ASET_LIST.map((k) => (
-            <option key={k} value={k}>{KONDISI[k].label}</option>
-          ))}
-        </Select>
+    <Card className="mb-3">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,2fr)_auto] xl:items-end">
+        <form
+          role="search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            apply({ q: String(new FormData(e.currentTarget).get("q") ?? "").trim() });
+          }}
+        >
+          <Field id="cari-aset" label="Cari">
+            <div className="relative">
+              <Input
+                id="cari-aset"
+                name="q"
+                type="search"
+                defaultValue={value.q}
+                placeholder="Kode / nama barang... (Enter)"
+                maxLength={BATAS.cari}
+                className="ps-10"
+                enterKeyHint="search"
+              />
+              <span className="pointer-events-none absolute inset-y-0 start-3 my-auto grid h-5 w-5 text-gray-400" aria-hidden>
+                {pending ? <Spinner className="h-5 w-5 text-brand-700" /> : <LuSearch className="h-5 w-5" />}
+              </span>
+            </div>
+          </Field>
+        </form>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Field id="filter-kategori" label="Kategori">
+            <Select id="filter-kategori" value={value.kategori} onChange={(e) => apply({ kategori: e.target.value })}>
+              <option value="">Semua</option>
+              {kategori.map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.nama}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field id="filter-status" label="Ketersediaan">
+            <Select id="filter-status" value={value.status} onChange={(e) => apply({ status: e.target.value })}>
+              <option value="">Semua</option>
+              {STATUS_ASET_LIST.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_ASET[s].label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field id="filter-kondisi" label="Kondisi" className="col-span-2 sm:col-span-1">
+            <Select id="filter-kondisi" value={value.kondisi} onChange={(e) => apply({ kondisi: e.target.value })}>
+              <option value="">Semua</option>
+              {KONDISI_ASET_LIST.map((k) => (
+                <option key={k} value={k}>
+                  {KONDISI[k].label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
+        {aksi && <div>{aksi}</div>}
       </div>
-      {pending && <Spinner size="sm" />}
-    </div>
+    </Card>
   );
 }

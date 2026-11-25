@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { HiOutlineBell } from "react-icons/hi2";
+import { LuBell } from "react-icons/lu";
 import { bacaNotifikasi, bacaSemuaNotifikasi } from "@/app/(app)/notifikasi-actions";
 
 export type NotifItem = {
@@ -37,33 +37,33 @@ export function NotifBell({ unread, items }: { unread: number; items: NotifItem[
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-full p-2 text-gray-600 hover:bg-gray-100"
+        className="relative grid h-11 w-11 place-items-center rounded-full text-gray-600 hover:bg-gray-100"
         aria-label={`Notifikasi, ${unread} belum dibaca`}
         aria-expanded={open}
       >
-        <HiOutlineBell className="h-6 w-6" />
+        <LuBell className="h-5 w-5" aria-hidden />
         {unread > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-semibold text-white">
+          <span className="absolute top-1 right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-700 px-1 text-[11px] ring-2 ring-white font-semibold text-white">
             {unread > 99 ? "99+" : unread}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 z-50 mt-2 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+        <div className="fixed inset-x-4 top-[calc(3.75rem+env(safe-area-inset-top))] z-50 animate-pop-in overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl sm:absolute sm:inset-x-auto sm:top-auto sm:right-0 sm:mt-1 sm:w-96">
           <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
             <p className="text-sm font-semibold text-gray-900">Notifikasi</p>
             {unread > 0 && (
               <button
                 type="button"
-                className="text-xs font-medium text-cyan-700 hover:underline"
+                className="min-h-8 rounded-md px-1 text-xs font-semibold text-brand-700 hover:underline"
                 onClick={() => startTransition(() => bacaSemuaNotifikasi())}
               >
                 Tandai semua dibaca
               </button>
             )}
           </div>
-          <ul className="max-h-96 divide-y divide-gray-100 overflow-y-auto">
+          <ul className="max-h-[min(24rem,70dvh)] divide-y divide-gray-100 overflow-y-auto">
             {items.length === 0 && <li className="px-4 py-6 text-center text-sm text-gray-500">Belum ada notifikasi.</li>}
             {items.map((n) => {
               const content = (
@@ -72,7 +72,7 @@ export function NotifBell({ unread, items }: { unread: number; items: NotifItem[
                   <p className="mt-0.5 text-xs text-gray-400">{n.waktu}</p>
                 </>
               );
-              const cls = `block px-4 py-3 hover:bg-gray-50 ${n.sudahDibaca ? "" : "bg-cyan-50/60"}`;
+              const cls = `block px-4 py-3 hover:bg-gray-50 ${n.sudahDibaca ? "" : "bg-brand-50/60"}`;
               const mark = () => {
                 setOpen(false);
                 if (!n.sudahDibaca) startTransition(() => bacaNotifikasi(n.id));

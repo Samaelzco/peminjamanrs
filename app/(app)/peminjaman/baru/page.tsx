@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { toWitaInput } from "@/lib/datetime";
 import { createClient } from "@/lib/supabase/server";
@@ -22,10 +22,7 @@ export default async function PeminjamanBaruPage() {
 
   return (
     <>
-      <PageHeader
-        title="Peminjaman Baru"
-        description="Pilih kategori dan jumlah. Sistem otomatis mengambil unit tersedia dengan kode terkecil."
-      />
+      <PageHeader title="Peminjaman Baru" description="Catat peminjaman lalu kirim ke Sarpras untuk tes & pemasangan" />
       <PeminjamanForm
         kategori={kategori ?? []}
         defaultKeluar={toWitaInput(now)}

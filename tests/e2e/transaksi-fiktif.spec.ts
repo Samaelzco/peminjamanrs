@@ -61,7 +61,7 @@ async function bukaFormBaru(page: Page, label: Label, keluar = witaInput(0), kem
 }
 
 async function kodeDraft(page: Page) {
-  const cells = await page.locator("table tbody tr td:first-child").allTextContents();
+  const cells = await page.locator("[data-kode-unit]").allTextContents();
   return cells.map((c) => c.trim()).filter((c) => /^[A-Z]{2,5}(-[A-Z]{2,5}){0,2}-\d{3,}$/.test(c));
 }
 
@@ -86,10 +86,10 @@ async function tambahUnit(page: Page, kategori: string, jumlah: number) {
 }
 
 async function simpanPeminjaman(page: Page, label: string) {
-  await page.getByRole("button", { name: "Simpan Peminjaman" }).click();
+  await page.getByRole("button", { name: "Simpan", exact: true }).click();
   await page.waitForURL(/\/peminjaman\/\d+\?baru=1/);
   const id = Number(new URL(page.url()).pathname.split("/")[2]);
-  const kode = (await page.locator("h1").first().innerText()).trim();
+  const kode = (await page.locator("h1 [data-kode]").innerText()).trim();
   pemetaan[label] = { id, kode };
   return { id, kode };
 }
@@ -130,7 +130,7 @@ async function tertolak(page: Page) {
 }
 
 async function kartuDashboard(page: Page, label: string) {
-  const p = page.locator("p.text-sm.text-gray-500", { hasText: new RegExp(`^${label}$`) }).first();
+  const p = page.locator("[data-stat-label]", { hasText: new RegExp(`^${label}$`) }).first();
   return Number((await p.locator("xpath=following-sibling::p").innerText()).trim());
 }
 
@@ -191,7 +191,7 @@ test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
   });
 
   await cek(admin, "1.2", "Ganti TI-LPT-001: dropdown hanya TI-LPT-002..004; pilih TI-LPT-002", async () => {
-    await admin.locator("table tbody tr", { hasText: "TI-LPT-001" }).getByRole("button", { name: "Ganti" }).click();
+    await admin.locator("[data-unit-draft]", { hasText: "TI-LPT-001" }).getByRole("button", { name: "Ganti" }).click();
     const select = admin.getByLabel("Ganti TI-LPT-001");
     await expect(select).toBeVisible();
     await expect(select.locator("option")).not.toHaveCount(1);
@@ -380,14 +380,16 @@ test("Langkah 3 – TRX-002: terlambat", async () => {
     return `${n2} peminjaman ditandai pada run kedua; notifikasi terlambat tetap 2 (1 per user)`;
   });
 
-  await cek(admin, "3.6", "Dashboard Admin: muncul di daftar Terlambat, kartu Terlambat bertambah", async () => {
+  await cek(admin, "3.6", "Dashboard Admin: muncul di daftar berjalan dengan status Terlambat, kartu Terlambat bertambah", async () => {
     await admin.goto("/");
     const sesudah = await kartuDashboard(admin, "Terlambat");
-    const section = admin.locator("section", { has: admin.getByRole("heading", { name: /^Terlambat/ }) });
-    await expect(section.getByRole("link", { name: pemetaan["TRX-002"].kode })).toBeVisible();
+    const section = admin.locator("section", { has: admin.getByRole("heading", { name: "Peminjaman Berjalan" }) });
+    const kartu = section.locator("li", { has: admin.getByRole("link", { name: pemetaan["TRX-002"].kode, exact: true }) });
+    await expect(kartu).toBeVisible();
+    await expect(kartu.getByText("Terlambat", { exact: true })).toBeVisible();
     await shot(admin, "3.6-dashboard-terlambat");
     assert(sesudah === terlambatSebelum + 1, `kartu ${terlambatSebelum} → ${sesudah}`);
-    return `Kartu Terlambat ${terlambatSebelum} → ${sesudah}; ${pemetaan["TRX-002"].kode} ada di tabel Terlambat`;
+    return `Kartu Terlambat ${terlambatSebelum} → ${sesudah}; ${pemetaan["TRX-002"].kode} tampil berstatus Terlambat`;
   });
 });
 
@@ -404,7 +406,7 @@ test("Langkah 4 – TRX-003: perpanjangan dari TRX-002", async () => {
     await admin.getByRole("button", { name: "Perpanjang" }).click();
     await admin.waitForURL(/\/peminjaman\/\d+\?perpanjangan=1/);
     const id = Number(new URL(admin.url()).pathname.split("/")[2]);
-    pemetaan["TRX-003"] = { id, kode: (await admin.locator("h1").first().innerText()).trim() };
+    pemetaan["TRX-003"] = { id, kode: (await admin.locator("h1 [data-kode]").innerText()).trim() };
     await shot(admin, "4.1-detail-perpanjangan");
     const { data: b } = await db.from("peminjaman")
       .select("perpanjangan_dari, nama_peminjam, divisi_peminjam, kontak_peminjam, ruangan, keperluan, detail_peminjaman(kondisi_keluar, aset(kode_aset))")
@@ -564,20 +566,20 @@ test("Pemeriksaan akhir", async () => {
     return `5 transaksi tampil; "Sari Wulandari" → ${p["TRX-004"].kode}; "TI-PRJ-001" → ${["TRX-001", "TRX-002", "TRX-003"].map((l) => p[l].kode).join(", ")}`;
   });
 
-  await cek(admin, "A.5", "Dashboard Admin & Sarpras: Diajukan 1, Dipinjam 1, Terlambat 0, Aset Tersedia 2", async () => {
+  await cek(admin, "A.5", "Dashboard Admin & Sarpras: Menunggu Pemasangan 1, Terlambat 0", async () => {
     const angka = async (page: Page) => {
       await page.goto("/");
-      return Promise.all(["Diajukan", "Dipinjam", "Terlambat", "Aset Tersedia"].map((l) => kartuDashboard(page, l)));
+      return Promise.all(["Menunggu Pemasangan", "Terlambat"].map((l) => kartuDashboard(page, l)));
     };
     const a = await angka(admin);
     const s = await angka(sarpras);
     await shot(admin, "A.5-dashboard-admin");
     await shot(sarpras, "A.5-dashboard-sarpras");
-    const harap = "[1,1,0,2]";
+    const harap = "[1,0]";
     assert(JSON.stringify(a) === harap && JSON.stringify(s) === harap, `admin ${a}, sarpras ${s}`);
     const menunggu = sarpras.locator("section", { has: sarpras.getByRole("heading", { name: /^Menunggu Pemasangan/ }) });
     await expect(menunggu.getByRole("link", { name: p["TRX-005"].kode })).toBeVisible();
-    return `Admin ${a.join("/")}, Sarpras ${s.join("/")} (Diajukan/Dipinjam/Terlambat/Aset Tersedia); TRX-005 di "Menunggu Pemasangan" Sarpras`;
+    return `Admin ${a.join("/")}, Sarpras ${s.join("/")} (Menunggu Pemasangan/Terlambat); TRX-005 di "Menunggu Pemasangan" Sarpras`;
   });
 
   await cek(sarpras, "A.6", "Sarpras tidak bisa membuat, memperpanjang, membatalkan (UI & API)", async () => {

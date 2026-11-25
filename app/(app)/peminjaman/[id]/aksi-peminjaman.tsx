@@ -1,16 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
-import { Alert, Button, Label, Modal, ModalBody, ModalFooter, ModalHeader, Textarea } from "flowbite-react";
-import {
-  HiOutlineArrowUturnLeft,
-  HiOutlineCalendarDays,
-  HiOutlinePencilSquare,
-  HiOutlineWrenchScrewdriver,
-  HiOutlineXCircle,
-} from "react-icons/hi2";
+import { LuCalendarPlus, LuPencil, LuUndo2, LuWrench, LuX } from "react-icons/lu";
+import { ConfirmDialog } from "@/components/overlay";
 import { ResultAlert, useAction } from "@/components/feedback";
+import { Alert, Button, ButtonLink, Label, Textarea } from "@/components/ui";
 import type { StatusPeminjaman } from "@/lib/labels";
 import { BATAS } from "@/lib/validation";
 import { batalkanPeminjaman } from "../actions";
@@ -26,73 +20,85 @@ type Props = {
 export function AksiPeminjaman({ id, kode, status, terpasang, can }: Props) {
   const action = useAction();
   const [batal, setBatal] = useState(false);
+  const [alasan, setAlasan] = useState("");
   // Belum dipasang: diajukan, atau terlambat sejak dicatat (rencana kembali sudah lewat).
   const menungguPasang = (status === "diajukan" || status === "terlambat") && !terpasang;
   const berjalan = (status === "dipinjam" || status === "terlambat") && terpasang;
 
-  return (
-    <div className="flex flex-col items-stretch gap-2 lg:items-end">
-      <div className="flex flex-wrap gap-2">
-        {menungguPasang && can.pemasangan && (
-          <Button as={Link} href={`/peminjaman/${id}/pemasangan`}>
-            <HiOutlineWrenchScrewdriver className="me-1.5 h-4 w-4" />
-            Pemasangan
-          </Button>
-        )}
-        {berjalan && can.pengembalian && (
-          <Button as={Link} href={`/peminjaman/${id}/pengembalian`} color="green">
-            <HiOutlineArrowUturnLeft className="me-1.5 h-4 w-4" />
-            Pengembalian
-          </Button>
-        )}
-        {berjalan && can.extend && (
-          <Button as={Link} href={`/peminjaman/${id}/perpanjang`} color="light">
-            <HiOutlineCalendarDays className="me-1.5 h-4 w-4" />
-            Perpanjang
-          </Button>
-        )}
-        {can.update && (
-          <Button as={Link} href={`/peminjaman/${id}/ubah`} color="light">
-            <HiOutlinePencilSquare className="me-1.5 h-4 w-4" />
-            Ubah
-          </Button>
-        )}
-        {menungguPasang && can.cancel && (
-          <Button color="red" onClick={() => setBatal(true)}>
-            <HiOutlineXCircle className="me-1.5 h-4 w-4" />
-            Batalkan
-          </Button>
-        )}
-      </div>
-      {action.result?.ok && <ResultAlert result={action.result} onDismiss={action.reset} />}
+  const tombol = [
+    menungguPasang && can.pemasangan && (
+      <ButtonLink key="pasang" href={`/peminjaman/${id}/pemasangan`} block>
+        <LuWrench className="h-4 w-4" aria-hidden />
+        Validasi Pemasangan
+      </ButtonLink>
+    ),
+    berjalan && can.pengembalian && (
+      <ButtonLink key="kembali" href={`/peminjaman/${id}/pengembalian`} block>
+        <LuUndo2 className="h-4 w-4" aria-hidden />
+        Validasi Pengembalian
+      </ButtonLink>
+    ),
+    berjalan && can.extend && (
+      <ButtonLink key="perpanjang" href={`/peminjaman/${id}/perpanjang`} variant="secondary" block>
+        <LuCalendarPlus className="h-4 w-4" aria-hidden />
+        Perpanjang Peminjaman
+      </ButtonLink>
+    ),
+    can.update && (
+      <ButtonLink key="ubah" href={`/peminjaman/${id}/ubah`} variant="secondary" block>
+        <LuPencil className="h-4 w-4" aria-hidden />
+        Ubah Data
+      </ButtonLink>
+    ),
+    menungguPasang && can.cancel && (
+      <Button key="batal" variant="danger-soft" block onClick={() => setBatal(true)}>
+        <LuX className="h-4 w-4" aria-hidden />
+        Batalkan Peminjaman
+      </Button>
+    ),
+  ].filter(Boolean);
 
-      <Modal show={batal} size="md" onClose={() => setBatal(false)} dismissible>
-        <ModalHeader>Batalkan {kode}</ModalHeader>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const alasan = String(new FormData(e.currentTarget).get("alasan") ?? "");
-            action.run(() => batalkanPeminjaman(id, alasan), () => setBatal(false));
-          }}
-        >
-          <ModalBody>
-            {action.result && !action.result.ok && (
-              <Alert color="failure" className="mb-4">{action.result.error}</Alert>
-            )}
-            <p className="mb-4 text-sm text-gray-600">
-              Peminjaman akan dibatalkan dan semua unitnya kembali tersedia untuk dipinjam.
-            </p>
-            <Label htmlFor="alasan" className="mb-1.5 block">Alasan (opsional)</Label>
-            <Textarea id="alasan" name="alasan" rows={2} maxLength={BATAS.alasan} />
-          </ModalBody>
-          <ModalFooter className="justify-end">
-            <Button color="alternative" onClick={() => setBatal(false)} disabled={action.pending}>Tutup</Button>
-            <Button color="red" type="submit" disabled={action.pending}>
-              {action.pending ? "Membatalkan..." : "Batalkan Peminjaman"}
-            </Button>
-          </ModalFooter>
-        </form>
-      </Modal>
+  if (tombol.length === 0 && !action.result) return null;
+
+  return (
+    <div className="space-y-2.5">
+      {action.result?.ok && <ResultAlert result={action.result} onDismiss={action.reset} />}
+      {tombol}
+
+      <ConfirmDialog
+        open={batal}
+        title="Batalkan Peminjaman?"
+        message={
+          <>
+            Yakin membatalkan peminjaman <strong className="text-gray-900">{kode}</strong>? Semua unitnya kembali tersedia
+            untuk dipinjam.
+          </>
+        }
+        confirmLabel="Batalkan"
+        icon="warning"
+        pending={action.pending}
+        onClose={() => {
+          setBatal(false);
+          action.reset();
+        }}
+        onConfirm={() => action.run(() => batalkanPeminjaman(id, alasan), () => setBatal(false))}
+      >
+        {action.result && !action.result.ok && (
+          <Alert tone="danger" className="mb-3">
+            {action.result.error}
+          </Alert>
+        )}
+        <Label htmlFor="alasan">Alasan (opsional)</Label>
+        <Textarea
+          id="alasan"
+          name="alasan"
+          rows={2}
+          maxLength={BATAS.alasan}
+          value={alasan}
+          onChange={(e) => setAlasan(e.target.value)}
+          className="min-h-16"
+        />
+      </ConfirmDialog>
     </div>
   );
 }

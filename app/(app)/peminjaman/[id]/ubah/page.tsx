@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { toWitaInput } from "@/lib/datetime";
 import type { StatusPeminjaman } from "@/lib/labels";
@@ -35,10 +34,8 @@ export default async function UbahPeminjamanPage({ params }: PageProps<"/peminja
 
   return (
     <>
-      <Link href={`/peminjaman/${p.id}`} className="mb-2 inline-block text-sm text-cyan-700 hover:underline">
-        ← Kembali ke {p.kode}
-      </Link>
       <PageHeader
+        back={{ href: `/peminjaman/${p.id}`, label: `Kembali ke ${p.kode}` }}
         title={`Ubah ${p.kode}`}
         description="Perbaiki data peminjaman atau ubah status secara manual. Setiap perubahan tercatat di timeline."
       />

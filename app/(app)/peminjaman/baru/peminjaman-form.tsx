@@ -1,30 +1,24 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { LuArrowLeftRight, LuPlus } from "react-icons/lu";
+import { DateTimeField } from "@/components/datetime-field";
+import { Sheet, SheetActions } from "@/components/overlay";
 import {
   Alert,
-  Badge,
   Button,
+  ButtonLink,
   Card,
-  HelperText,
-  Label,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
+  CardTitle,
+  Field,
+  FieldError,
+  InfoNote,
+  Input,
+  Pill,
   Select,
   Spinner,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
   Textarea,
-  TextInput,
-} from "flowbite-react";
-import { HiOutlineArrowsRightLeft, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
-import { DateTimeField } from "@/components/datetime-field";
+} from "@/components/ui";
 import { BATAS, hanyaAngka } from "@/lib/validation";
 import { ambilUnit, buatPeminjaman, opsiGantiUnit, type UnitTersedia } from "../actions";
 
@@ -111,22 +105,26 @@ export function PeminjamanForm({
         e.preventDefault();
         simpan(new FormData(e.currentTarget));
       }}
-      className="grid gap-6 xl:grid-cols-5"
+      className="grid gap-3 lg:grid-cols-2 lg:items-start lg:gap-4"
       noValidate
     >
-      <div className="space-y-6 xl:col-span-2">
+      <div className="space-y-3 lg:space-y-4">
         <Card>
-          <h2 className="text-base font-semibold text-gray-900">Data Peminjam</h2>
+          <CardTitle className="mb-3">Data Peminjam</CardTitle>
           <div className="space-y-4">
-            <Field id="nama_peminjam" label="Nama peminjam" error={fe("nama_peminjam")}>
-              <TextInput id="nama_peminjam" name="nama_peminjam" maxLength={BATAS.namaOrang} autoComplete="off" required />
+            <Field id="nama_peminjam" label="Nama Peminjam" error={fe("nama_peminjam")}>
+              <Input
+                id="nama_peminjam"
+                name="nama_peminjam"
+                placeholder="Nama lengkap"
+                maxLength={BATAS.namaOrang}
+                autoComplete="off"
+                invalid={!!fe("nama_peminjam")}
+                required
+              />
             </Field>
-            <Field
-              id="kontak_peminjam"
-              label="Nomor kontak"
-              error={fe("kontak_peminjam")}
-            >
-              <TextInput
+            <Field id="kontak_peminjam" label="Nomor Kontak" error={fe("kontak_peminjam")}>
+              <Input
                 id="kontak_peminjam"
                 name="kontak_peminjam"
                 type="tel"
@@ -137,29 +135,41 @@ export function PeminjamanForm({
                 value={kontak}
                 onChange={(e) => setKontak(hanyaAngka(e.target.value).slice(0, BATAS.kontakMax))}
                 autoComplete="off"
+                invalid={!!fe("kontak_peminjam")}
                 required
               />
             </Field>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field id="divisi_peminjam" label="Divisi" error={fe("divisi_peminjam")}>
-                <TextInput id="divisi_peminjam" name="divisi_peminjam" maxLength={BATAS.divisi} required />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <Field id="divisi_peminjam" label="Unit Peminjam" error={fe("divisi_peminjam")}>
+                <Input
+                  id="divisi_peminjam"
+                  name="divisi_peminjam"
+                  placeholder="Contoh: Unit Radiologi"
+                  maxLength={BATAS.divisi}
+                  invalid={!!fe("divisi_peminjam")}
+                  required
+                />
               </Field>
-              <Field id="ruangan" label="Ruangan" error={fe("ruangan")}>
-                <TextInput id="ruangan" name="ruangan" maxLength={BATAS.ruangan} required />
+              <Field id="ruangan" label="Ruangan Tempat Peminjaman" error={fe("ruangan")}>
+                <Input
+                  id="ruangan"
+                  name="ruangan"
+                  placeholder="Contoh: R. Rapat Lt.2"
+                  maxLength={BATAS.ruangan}
+                  invalid={!!fe("ruangan")}
+                  required
+                />
               </Field>
             </div>
-            <Field
-              id="keperluan"
-              label="Keperluan"
-              error={fe("keperluan")}
-            >
+            <Field id="keperluan" label="Alasan Peminjaman" error={fe("keperluan")}>
               <Textarea
                 id="keperluan"
                 name="keperluan"
-                rows={3}
+                placeholder="Jelaskan keperluan peminjaman"
                 maxLength={BATAS.keperluan}
                 value={keperluan}
                 onChange={(e) => setKeperluan(e.target.value)}
+                invalid={!!fe("keperluan")}
                 required
               />
             </Field>
@@ -167,14 +177,18 @@ export function PeminjamanForm({
         </Card>
 
         <Card>
-          <h2 className="text-base font-semibold text-gray-900">Jadwal (WITA)</h2>
+          <CardTitle className="mb-3">Jadwal</CardTitle>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label htmlFor="tgl_peminjaman" className="mb-1.5 block">Tanggal & jam keluar</Label>
-              <DateTimeField id="tgl_peminjaman" name="tgl_peminjaman" defaultValue={defaultKeluar} required error={fe("tgl_peminjaman")} />
-            </div>
-            <div>
-              <Label htmlFor="tgl_rencana_kembali" className="mb-1.5 block">Rencana kembali</Label>
+            <Field id="tgl_peminjaman" label="Tanggal Keluar">
+              <DateTimeField
+                id="tgl_peminjaman"
+                name="tgl_peminjaman"
+                defaultValue={defaultKeluar}
+                required
+                error={fe("tgl_peminjaman")}
+              />
+            </Field>
+            <Field id="tgl_rencana_kembali" label="Tanggal Kembali">
               <DateTimeField
                 id="tgl_rencana_kembali"
                 name="tgl_rencana_kembali"
@@ -182,27 +196,28 @@ export function PeminjamanForm({
                 required
                 error={fe("tgl_rencana_kembali")}
               />
-            </div>
+            </Field>
           </div>
+          <p className="mt-2 text-xs text-gray-500">Waktu dalam WITA, format 24 jam.</p>
         </Card>
       </div>
 
-      <div className="space-y-6 xl:col-span-3">
+      <div className="space-y-3 lg:sticky lg:top-20 lg:space-y-4">
         <Card>
-          <h2 className="text-base font-semibold text-gray-900">Unit yang Dipinjam</h2>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <Label htmlFor="kategori" className="mb-1.5 block">Kategori</Label>
+          <CardTitle className="mb-3">Barang yang Dipinjam</CardTitle>
+          <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_7rem]">
+            <Field id="kategori" label="Kategori">
               <Select id="kategori" value={kategoriId} onChange={(e) => setKategoriId(e.target.value)}>
                 <option value="">Pilih kategori</option>
                 {kategori.map((k) => (
-                  <option key={k.id} value={k.id}>{k.nama}</option>
+                  <option key={k.id} value={k.id}>
+                    {k.nama}
+                  </option>
                 ))}
               </Select>
-            </div>
-            <div className="w-full sm:w-28">
-              <Label htmlFor="jumlah" className="mb-1.5 block">Jumlah</Label>
-              <TextInput
+            </Field>
+            <Field id="jumlah" label="Jumlah">
+              <Input
                 id="jumlah"
                 type="text"
                 inputMode="numeric"
@@ -217,90 +232,76 @@ export function PeminjamanForm({
                   }
                 }}
               />
-            </div>
-            <Button type="button" onClick={tambahUnit} disabled={adding}>
-              {adding ? <Spinner size="sm" className="me-1.5" /> : <HiOutlinePlus className="me-1.5 h-4 w-4" />}
-              Tambah Unit
-            </Button>
+            </Field>
           </div>
+          <Button variant="secondary" block className="mt-4" onClick={tambahUnit} loading={adding}>
+            {!adding && <LuPlus className="h-4 w-4" aria-hidden />}
+            Tambah Unit
+          </Button>
           {unitError && (
-            <Alert color="failure" onDismiss={() => setUnitError(null)}>
+            <Alert tone="danger" onDismiss={() => setUnitError(null)} className="mt-3">
               {unitError}
             </Alert>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableHeadCell>Kode Unit</TableHeadCell>
-                  <TableHeadCell>Nama Barang</TableHeadCell>
-                  <TableHeadCell>Kategori</TableHeadCell>
-                  <TableHeadCell>Ketersediaan</TableHeadCell>
-                  <TableHeadCell className="text-right">Aksi</TableHeadCell>
-                </TableRow>
-              </TableHead>
-              <TableBody className="divide-y">
-                {units.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="py-8 text-center text-gray-500">
-                      Belum ada unit. Pilih kategori dan jumlah, lalu klik Tambah Unit.
-                    </TableCell>
-                  </TableRow>
-                )}
-                {units.map((u) => (
-                  <TableRow key={u.id} className="bg-white">
-                    <TableCell className="font-mono font-medium whitespace-nowrap text-gray-900">{u.kode_aset}</TableCell>
-                    <TableCell>{u.nama_aset}</TableCell>
-                    <TableCell>{u.kategori_nama}</TableCell>
-                    <TableCell>
-                      <Badge color="success" className="w-fit">Tersedia</Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end gap-2 whitespace-nowrap">
-                        <Button size="xs" color="light" type="button" onClick={() => setGanti(u)}>
-                          <HiOutlineArrowsRightLeft className="me-1 h-4 w-4" />
-                          Ganti
-                        </Button>
-                        <Button
-                          size="xs"
-                          color="red"
-                          type="button"
-                          onClick={() => setUnits((prev) => prev.filter((x) => x.id !== u.id))}
-                        >
-                          <HiOutlineTrash className="me-1 h-4 w-4" />
-                          Hapus
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          {ringkasan.length > 0 && (
-            <p className="text-sm text-gray-600">
-              Total {units.length} unit: {ringkasan.map(([k, n]) => `${n} ${k}`).join(", ")}
-            </p>
+          {units.length > 0 && (
+            <ul className="mt-4 space-y-3" aria-label="Unit dipilih">
+              {units.map((u) => (
+                <li key={u.id} data-unit-draft className="rounded-lg border border-gray-200 p-3.5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p data-kode-unit className="font-bold text-gray-900">
+                        {u.kode_aset}
+                      </p>
+                      <p className="mt-0.5 text-[15px] break-words text-gray-900">{u.nama_aset}</p>
+                      <p className="text-sm text-gray-500">{u.kategori_nama}</p>
+                    </div>
+                    <Pill tone="green">Tersedia</Pill>
+                  </div>
+                  <div className="mt-2 flex justify-end gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setGanti(u)}>
+                      <LuArrowLeftRight className="h-4 w-4" aria-hidden />
+                      Ganti
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-800 hover:bg-red-50"
+                      onClick={() => setUnits((prev) => prev.filter((x) => x.id !== u.id))}
+                    >
+                      Hapus
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
-          {fe("aset_ids") && <HelperText color="failure">{fe("aset_ids")}</HelperText>}
+
+          <InfoNote className="mt-4">
+            {units.length === 0
+              ? "Belum ada unit. Pilih kategori dan jumlah, lalu tekan Tambah Unit. Sistem mengambil unit tersedia dengan kode terkecil."
+              : `${units.length} unit dipilih: ${ringkasan.map(([k, n]) => `${n} ${k}`).join(", ")}.`}
+          </InfoNote>
+          <FieldError>{fe("aset_ids")}</FieldError>
         </Card>
 
         {saveError && (
-          <Alert color="failure" onDismiss={() => setSaveError(null)}>
+          <Alert tone="danger" onDismiss={() => setSaveError(null)}>
             {saveError}
           </Alert>
         )}
-        <div className="flex justify-end">
-          <Button type="submit" size="lg" disabled={saving || units.length === 0}>
-            {saving && <Spinner size="sm" className="me-2" />}
-            Simpan Peminjaman
+        <div className="grid grid-cols-2 gap-3">
+          <ButtonLink href="/" variant="secondary">
+            Batal
+          </ButtonLink>
+          <Button type="submit" loading={saving} disabled={units.length === 0}>
+            Simpan
           </Button>
         </div>
       </div>
 
       {ganti && (
-        <GantiDraftModal
+        <GantiDraftSheet
           unit={ganti}
           kecuali={units.map((u) => u.id)}
           onClose={() => setGanti(null)}
@@ -314,8 +315,8 @@ export function PeminjamanForm({
   );
 }
 
-/** Modal Ganti: pilih unit lain yang tersedia di kategori yang sama (aturan 6.1). */
-function GantiDraftModal({
+/** Ganti: pilih unit lain yang tersedia di kategori yang sama (aturan 6.1). */
+function GantiDraftSheet({
   unit,
   kecuali,
   onClose,
@@ -344,61 +345,58 @@ function GantiDraftModal({
   }, [unit.kategori_id, kecualiAwal]);
 
   return (
-    <Modal show size="md" onClose={onClose} dismissible>
-      <ModalHeader>Ganti Unit {unit.kode_aset}</ModalHeader>
-      <ModalBody>
-        {error && <Alert color="failure" className="mb-4">{error}</Alert>}
-        <Label htmlFor="unit_pengganti" className="mb-1.5 block">Unit pengganti ({unit.kategori_nama})</Label>
-        {opsi === null && !error ? (
-          <div className="flex items-center gap-2 text-sm text-gray-500"><Spinner size="sm" /> Memuat unit tersedia...</div>
-        ) : opsi && opsi.length === 0 ? (
-          <p className="text-sm text-gray-500">Tidak ada unit lain yang tersedia di kategori ini.</p>
-        ) : (
+    <Sheet
+      open
+      onClose={onClose}
+      title={`Ganti Unit ${unit.kode_aset}`}
+      description={`Pilih unit ${unit.kategori_nama} lain yang tersedia`}
+      footer={
+        <SheetActions>
+          <Button variant="secondary" onClick={onClose}>
+            Batal
+          </Button>
+          <Button
+            disabled={!pilihan}
+            onClick={() => {
+              const baru = opsi?.find((o) => o.id === Number(pilihan));
+              if (baru) onPilih(baru);
+            }}
+          >
+            Ganti Unit
+          </Button>
+        </SheetActions>
+      }
+    >
+      {error && (
+        <Alert tone="danger" className="mb-4">
+          {error}
+        </Alert>
+      )}
+      {opsi === null && !error ? (
+        <p className="flex items-center gap-2 text-sm text-gray-500">
+          <Spinner className="h-4 w-4" /> Memuat unit tersedia...
+        </p>
+      ) : opsi && opsi.length === 0 ? (
+        <p className="text-sm text-gray-500">Tidak ada unit lain yang tersedia di kategori ini.</p>
+      ) : (
+        <Field id="unit_pengganti" label={`Unit pengganti (${unit.kategori_nama})`}>
           <Select
             id="unit_pengganti"
             aria-label={`Ganti ${unit.kode_aset}`}
             value={pilihan}
             onChange={(e) => setPilihan(e.target.value)}
           >
-            <option value="" disabled>Pilih unit pengganti</option>
+            <option value="" disabled>
+              Pilih unit pengganti
+            </option>
             {(opsi ?? []).map((o) => (
-              <option key={o.id} value={o.id}>{o.kode_aset} — {o.nama_aset}</option>
+              <option key={o.id} value={o.id}>
+                {o.kode_aset} — {o.nama_aset}
+              </option>
             ))}
           </Select>
-        )}
-      </ModalBody>
-      <ModalFooter className="justify-end">
-        <Button color="alternative" onClick={onClose}>Batal</Button>
-        <Button
-          disabled={!pilihan}
-          onClick={() => {
-            const baru = opsi?.find((o) => o.id === Number(pilihan));
-            if (baru) onPilih(baru);
-          }}
-        >
-          Ganti Unit
-        </Button>
-      </ModalFooter>
-    </Modal>
-  );
-}
-
-function Field({
-  id,
-  label,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <Label htmlFor={id} className="mb-1.5 block">{label}</Label>
-      {children}
-      {error && <HelperText color="failure">{error}</HelperText>}
-    </div>
+        </Field>
+      )}
+    </Sheet>
   );
 }

@@ -63,14 +63,14 @@ async function main() {
       const html = await r.text();
       return (r.status === 403 || html.includes("Akses ditolak")) || `status ${r.status}`;
     });
-    await check("Sarpras bisa membuka Data Aset (dengan tombol Tambah Aset)", async () => {
+    await check("Sarpras bisa membuka Data Barang (dengan tombol Tambah Barang)", async () => {
       const r = await get("/aset", cs);
       const html = await r.text();
-      return (r.status === 200 && html.includes("TI-LPT-001") && html.includes("Tambah Aset")) || `status ${r.status}`;
+      return (r.status === 200 && html.includes("TI-LPT-001") && html.includes("Tambah Barang")) || `status ${r.status}`;
     });
-    await check("Admin melihat Data Aset tanpa tombol Tambah Aset", async () => {
+    await check("Admin melihat Data Barang tanpa tombol Tambah Barang", async () => {
       const html = await (await get("/aset", ca)).text();
-      return (html.includes("TI-LPT-001") && !html.includes("Tambah Aset")) || "tidak sesuai";
+      return (html.includes("TI-LPT-001") && !html.includes("Tambah Barang")) || "tidak sesuai";
     });
     await check("Filter aset berdasarkan kategori bekerja", async () => {
       const { data: prj } = await admin.from("kategori").select("id").eq("nama", "Proyektor").single();
@@ -157,7 +157,7 @@ async function main() {
     await check("Dashboard: kartu ringkasan & tabel sesuai role, ikon notifikasi", async () => {
       const ha = await (await get("/", ca)).text();
       const hs = await (await get("/", cs)).text();
-      const okA = ha.includes("Aset Tersedia") && ha.includes("Peminjaman Berjalan") && !ha.includes("Menunggu Pemasangan") && ha.includes("Notifikasi,");
+      const okA = ha.includes("Peminjaman Berjalan") && !ha.includes("Sedang Dipinjam") && ha.includes("Notifikasi,");
       const okS = hs.includes("Menunggu Pemasangan") && hs.includes("Sedang Dipinjam") && hs.includes("Terlambat");
       return (okA && okS) || `admin ${okA}, sarpras ${okS}`;
     });

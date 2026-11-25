@@ -7,7 +7,7 @@ import { ambilRekap, formatDurasi, type BarisRekap } from "@/lib/rekap";
 import { parseFilterRiwayat } from "@/lib/riwayat-filter";
 
 const FORMAT_WAKTU = "dd/mm/yyyy hh:mm";
-const WARNA_HEADER = "FF0E7490"; // cyan-700
+const WARNA_HEADER = "FF0B6E69"; // brand-700 (teal)
 
 /** Excel menyimpan tanggal tanpa zona waktu: geser ke jam dinding WITA (UTC+8). */
 const keWita = (d: Date | null) => (d ? new Date(d.getTime() + 8 * 3600_000) : null);

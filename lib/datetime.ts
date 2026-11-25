@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { TZDate } from "@date-fns/tz";
+import { id as localeId } from "date-fns/locale";
 
 export const TIMEZONE = "Asia/Makassar";
 
@@ -7,6 +8,18 @@ export const TIMEZONE = "Asia/Makassar";
 export function formatWita(value: string | Date | null | undefined): string {
   if (!value) return "-";
   return format(new TZDate(new Date(value), TIMEZONE), "dd/MM/yyyy HH:mm");
+}
+
+/** Tanggal singkat WITA, contoh "20 Nov 2026". */
+export function formatTanggal(value: string | Date | null | undefined): string {
+  if (!value) return "-";
+  return format(new TZDate(new Date(value), TIMEZONE), "d MMM yyyy", { locale: localeId });
+}
+
+/** Tanggal + jam singkat WITA, contoh "20 Nov 2026 13:00". */
+export function formatWaktu(value: string | Date | null | undefined): string {
+  if (!value) return "-";
+  return format(new TZDate(new Date(value), TIMEZONE), "d MMM yyyy HH:mm", { locale: localeId });
 }
 
 /** Nilai untuk <input type="datetime-local"> dalam WITA. */

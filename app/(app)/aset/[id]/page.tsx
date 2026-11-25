@@ -1,22 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  Badge,
-  Card,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeadCell,
-  TableRow,
-} from "flowbite-react";
+import { StatusPill } from "@/components/peminjaman-table";
+import { Card, CardTitle, EmptyState, InfoGrid, InfoItem, PageHeader, Pill } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
-import { formatWita } from "@/lib/datetime";
-import { KONDISI, STATUS_ASET, STATUS_PEMINJAMAN } from "@/lib/labels";
+import { formatTanggal, formatWaktu } from "@/lib/datetime";
+import { KONDISI, STATUS_ASET } from "@/lib/labels";
 import { createClient } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Detail Aset" };
+export const metadata: Metadata = { title: "Detail Barang" };
 
 export default async function AsetDetailPage({ params }: PageProps<"/aset/[id]">) {
   const user = await requirePermission("aset.view");
@@ -46,80 +38,68 @@ export default async function AsetDetailPage({ params }: PageProps<"/aset/[id]">
 
   return (
     <>
-      <Link href="/aset" className="mb-2 inline-block text-sm text-cyan-700 hover:underline">
-        ← Kembali ke Data Aset
-      </Link>
-      <div className="mb-6 flex flex-wrap items-center gap-3">
-        <h1 className="font-mono text-2xl font-bold text-gray-900">{aset.kode_aset}</h1>
-        <Badge color={STATUS_ASET[aset.status].color} size="sm">{STATUS_ASET[aset.status].label}</Badge>
-        <Badge color={KONDISI[aset.kondisi].color} size="sm">Kondisi {KONDISI[aset.kondisi].label}</Badge>
-      </div>
+      <PageHeader
+        back={{ href: "/aset", label: "Kembali ke Data Barang" }}
+        title={aset.kode_aset}
+        description={aset.nama_aset}
+      />
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-3 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-4">
         <Card>
-          <h2 className="text-base font-semibold text-gray-900">Informasi Aset</h2>
-          <dl className="space-y-3 text-sm">
-            <div><dt className="text-gray-500">Nama aset</dt><dd className="font-medium">{aset.nama_aset}</dd></div>
-            <div><dt className="text-gray-500">Kategori</dt><dd className="font-medium">{aset.kategori?.nama}</dd></div>
-            <div><dt className="text-gray-500">Deskripsi</dt><dd className="font-medium whitespace-pre-line">{aset.deskripsi ?? "-"}</dd></div>
-            <div><dt className="text-gray-500">Terdaftar</dt><dd className="font-medium">{formatWita(aset.created_at)}</dd></div>
-          </dl>
+          <div className="mb-3.5 flex flex-wrap items-center gap-2">
+            <CardTitle className="me-auto">Informasi Barang</CardTitle>
+            <Pill tone={STATUS_ASET[aset.status].tone}>{STATUS_ASET[aset.status].label}</Pill>
+            <Pill tone={KONDISI[aset.kondisi].tone}>Kondisi {KONDISI[aset.kondisi].label}</Pill>
+          </div>
+          <InfoGrid className="md:grid-cols-2 lg:grid-cols-1">
+            <InfoItem label="Nama Barang">{aset.nama_aset}</InfoItem>
+            <InfoItem label="Kategori">{aset.kategori?.nama ?? "-"}</InfoItem>
+            <InfoItem label="Deskripsi" className="col-span-2 md:col-span-1">
+              {aset.deskripsi ?? "-"}
+            </InfoItem>
+            <InfoItem label="Terdaftar">{formatTanggal(aset.created_at)}</InfoItem>
+          </InfoGrid>
         </Card>
 
-        <Card className="xl:col-span-2">
-          <h2 className="text-base font-semibold text-gray-900">Riwayat Peminjaman</h2>
+        <section aria-labelledby="riwayat-aset">
+          <h2 id="riwayat-aset" className="mb-3 text-base font-semibold text-gray-900">
+            Riwayat Peminjaman
+          </h2>
           {!bisaLihatPeminjaman ? (
-            <p className="text-sm text-gray-500">Anda tidak punya izin melihat peminjaman.</p>
+            <EmptyState>Anda tidak punya izin melihat peminjaman.</EmptyState>
+          ) : (riwayat ?? []).length === 0 ? (
+            <EmptyState>Belum pernah dipinjam.</EmptyState>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableHeadCell>Kode</TableHeadCell>
-                    <TableHeadCell>Peminjam</TableHeadCell>
-                    <TableHeadCell>Keluar</TableHeadCell>
-                    <TableHeadCell>Rencana Kembali</TableHeadCell>
-                    <TableHeadCell>Status</TableHeadCell>
-                    <TableHeadCell>Kondisi</TableHeadCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody className="divide-y">
-                  {(riwayat ?? []).length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center text-gray-500">Belum pernah dipinjam.</TableCell>
-                    </TableRow>
+            <ul className="grid gap-3 xl:grid-cols-2">
+              {(riwayat ?? []).map((r) => (
+                <li key={r.id} className="relative rounded-xl border border-gray-200 bg-white p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link
+                      href={`/peminjaman/${r.peminjaman.id}`}
+                      className="font-bold text-gray-900 after:absolute after:inset-0 after:rounded-xl hover:text-brand-700"
+                    >
+                      {r.peminjaman.kode_peminjaman}
+                    </Link>
+                    <StatusPill status={r.peminjaman.status} />
+                  </div>
+                  <p className="mt-1 text-[15px] break-words text-gray-900">
+                    {r.peminjaman.nama_peminjam} · {r.peminjaman.divisi_peminjam}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {formatWaktu(r.peminjaman.tgl_peminjaman)} → {formatWaktu(r.peminjaman.tgl_rencana_kembali)}
+                  </p>
+                  {(r.kondisi_keluar || r.kondisi_masuk) && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      {r.kondisi_keluar ? `Keluar: ${KONDISI[r.kondisi_keluar].label}` : ""}
+                      {r.kondisi_masuk ? ` · Masuk: ${KONDISI[r.kondisi_masuk].label}` : ""}
+                    </p>
                   )}
-                  {(riwayat ?? []).map((r) => (
-                    <TableRow key={r.id} className="bg-white">
-                      <TableCell className="font-mono">
-                        <Link href={`/peminjaman/${r.peminjaman.id}`} className="text-cyan-700 hover:underline">
-                          {r.peminjaman.kode_peminjaman}
-                        </Link>
-                      </TableCell>
-                      <TableCell>
-                        <p className="text-gray-900">{r.peminjaman.nama_peminjam}</p>
-                        <p className="text-xs text-gray-500">{r.peminjaman.divisi_peminjam}</p>
-                      </TableCell>
-                      <TableCell className="whitespace-nowrap">{formatWita(r.peminjaman.tgl_peminjaman)}</TableCell>
-                      <TableCell className="whitespace-nowrap">{formatWita(r.peminjaman.tgl_rencana_kembali)}</TableCell>
-                      <TableCell>
-                        <Badge color={STATUS_PEMINJAMAN[r.peminjaman.status].color} className="w-fit">
-                          {STATUS_PEMINJAMAN[r.peminjaman.status].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {r.kondisi_keluar ? `Keluar: ${KONDISI[r.kondisi_keluar].label}` : ""}
-                        {r.kondisi_masuk ? ` · Masuk: ${KONDISI[r.kondisi_masuk].label}` : ""}
-                        {!r.kondisi_keluar && !r.kondisi_masuk && "-"}
-                        {r.catatan && <p className="text-gray-500">{r.catatan}</p>}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  {r.catatan && <p className="mt-1 text-sm break-words text-gray-500">Catatan: {r.catatan}</p>}
+                </li>
+              ))}
+            </ul>
           )}
-        </Card>
+        </section>
       </div>
     </>
   );

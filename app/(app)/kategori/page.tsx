@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { PageHeader } from "@/components/page-header";
+import { PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { KategoriTable } from "./kategori-table";
@@ -18,7 +18,7 @@ export default async function KategoriPage() {
 
   return (
     <>
-      <PageHeader title="Kategori" description="Kategori menentukan prefix kode aset, contoh LPT-001." />
+      <PageHeader title="Kategori Barang" description="Kelompokkan barang agar mudah dicari. Prefix kategori menjadi awalan kode barang." />
       <KategoriTable
         kategori={(data ?? []).map((k) => ({
           id: k.id,
