@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { LuPencil, LuTrash2 } from "react-icons/lu";
 import { ConfirmDialog, ResultAlert, useAction } from "@/components/feedback";
 import { Sheet, SheetActions } from "@/components/overlay";
 import { Button, EmptyState, Field, Input, Pill, Select, Textarea } from "@/components/ui";
@@ -78,12 +79,12 @@ export function AsetTable({
               {canUpdate && (
                 <div className="relative z-10 mt-auto pt-2">
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
-                    className="-ms-3"
                     onClick={() => setForm({ aset: a })}
                     aria-label={`Edit ${a.kodeAset}`}
                   >
+                    <LuPencil className="h-4 w-4" aria-hidden />
                     Edit
                   </Button>
                 </div>
@@ -263,14 +264,10 @@ function AsetSheet({
           </Field>
         </div>
         {onHapus && (
-          <button
-            type="button"
-            onClick={onHapus}
-            disabled={action.pending}
-            className="min-h-11 text-sm font-semibold text-red-800 hover:underline disabled:opacity-50"
-          >
+          <Button variant="danger-soft" onClick={onHapus} disabled={action.pending} className="self-start">
+            <LuTrash2 className="h-4 w-4" aria-hidden />
             Hapus barang ini
-          </button>
+          </Button>
         )}
       </form>
     </Sheet>

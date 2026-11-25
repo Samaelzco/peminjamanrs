@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { LuCheck, LuEye, LuEyeOff } from "react-icons/lu";
+import { LuCheck, LuEye, LuEyeOff, LuPencil } from "react-icons/lu";
 import { ResultAlert, useAction, type ActionResultLike } from "@/components/feedback";
 import { Sheet, SheetActions } from "@/components/overlay";
 import { Button, Card, EmptyState, Field, Input, Pill, Select, cn } from "@/components/ui";
@@ -113,12 +113,13 @@ export function AkunTable({ akun, roles, currentUserId, canCreate, canUpdate, ca
                   </div>
                   {canUpdate && (
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
-                      className="-me-3 shrink-0"
+                      className="shrink-0"
                       onClick={() => setForm({ mode: "edit", akun: a })}
                       aria-label={`Edit ${a.nama}`}
                     >
+                      <LuPencil className="h-4 w-4" aria-hidden />
                       Edit
                     </Button>
                   )}

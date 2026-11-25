@@ -1,7 +1,7 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { LuPlus, LuSearch } from "react-icons/lu";
+import { LuPencil, LuPlus, LuSearch, LuTrash2 } from "react-icons/lu";
 import { ConfirmDialog, ResultAlert, useAction } from "@/components/feedback";
 import { Sheet, SheetActions } from "@/components/overlay";
 import { Button, Card, Field, InfoNote, Input } from "@/components/ui";
@@ -68,20 +68,21 @@ export function KategoriTable({
               <li key={k.id} className="flex items-center gap-3 py-2.5">
                 <p className="min-w-0 flex-1 text-[15px] break-words text-gray-900">{k.nama}</p>
                 {canUpdate && (
-                  <Button variant="ghost" size="sm" onClick={() => setForm({ kategori: k })} aria-label={`Edit ${k.nama}`}>
+                  <Button variant="secondary" size="sm" onClick={() => setForm({ kategori: k })} aria-label={`Edit ${k.nama}`}>
+                    <LuPencil className="h-4 w-4" aria-hidden />
                     Edit
                   </Button>
                 )}
                 {canDelete && (
                   <Button
-                    variant="ghost"
+                    variant="danger-soft"
                     size="sm"
-                    className="text-red-800 hover:bg-red-50"
                     disabled={k.jumlahAset > 0}
                     title={k.jumlahAset > 0 ? "Kategori masih memiliki unit" : undefined}
                     onClick={() => setHapus(k)}
                     aria-label={`Hapus ${k.nama}`}
                   >
+                    <LuTrash2 className="h-4 w-4" aria-hidden />
                     Hapus
                   </Button>
                 )}

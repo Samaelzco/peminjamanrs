@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LuKeyRound, LuPlus } from "react-icons/lu";
+import { LuKeyRound, LuPencil, LuPlus, LuTrash2 } from "react-icons/lu";
 import { ConfirmDialog, ResultAlert, useAction } from "@/components/feedback";
 import { Sheet, SheetActions } from "@/components/overlay";
 import { Button, ButtonLink, Field, Input, Pill, Textarea } from "@/components/ui";
@@ -53,25 +53,26 @@ export function RoleTable({
             <p className="mt-2 text-xs text-gray-500">
               {r.jumlahAkun} akun · {r.jumlahPermission} permission
             </p>
-            <div className="mt-auto flex flex-wrap items-center gap-1 pt-3">
+            <div className="mt-auto flex flex-wrap items-center gap-2 pt-3">
               <ButtonLink href={`/role/${r.id}`} variant="secondary" size="sm" className="me-auto">
                 <LuKeyRound className="h-4 w-4" aria-hidden />
                 {canManage ? "Atur Permission" : "Lihat Permission"}
               </ButtonLink>
               {canManage && (
                 <>
-                  <Button variant="ghost" size="sm" onClick={() => setForm({ role: r })} aria-label={`Edit ${r.nama}`}>
+                  <Button variant="secondary" size="sm" onClick={() => setForm({ role: r })} aria-label={`Edit ${r.nama}`}>
+                    <LuPencil className="h-4 w-4" aria-hidden />
                     Edit
                   </Button>
                   <Button
-                    variant="ghost"
+                    variant="danger-soft"
                     size="sm"
-                    className="text-red-800 hover:bg-red-50"
                     disabled={r.jumlahAkun > 0}
                     title={r.jumlahAkun > 0 ? "Role masih dipakai akun" : undefined}
                     onClick={() => setHapus(r)}
                     aria-label={`Hapus ${r.nama}`}
                   >
+                    <LuTrash2 className="h-4 w-4" aria-hidden />
                     Hapus
                   </Button>
                 </>
