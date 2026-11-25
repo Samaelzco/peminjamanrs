@@ -225,8 +225,8 @@ export function StatCard({
   tone?: keyof typeof STAT_TONE;
 }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white px-4 py-3">
-      <p data-stat-label className="text-[13px] leading-5 text-gray-500 sm:text-sm">
+    <div className="rounded-xl border border-gray-200 bg-white px-3.5 py-3 sm:px-4">
+      <p data-stat-label className="text-[13px] leading-5 tracking-[-0.01em] text-gray-500 sm:text-sm">
         {label}
       </p>
       <p className={cn("mt-0.5 text-[28px] leading-9 font-bold tabular-nums", STAT_TONE[tone])}>{value}</p>
@@ -337,6 +337,7 @@ export function Field({
   label,
   error,
   hint,
+  required,
   children,
   className,
 }: {
@@ -344,12 +345,22 @@ export function Field({
   label: ReactNode;
   error?: string;
   hint?: ReactNode;
+  /** Tampilkan tanda * di label. */
+  required?: boolean;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <div className={className}>
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {required && (
+          <span className="text-gray-900" aria-hidden>
+            {" "}
+            *
+          </span>
+        )}
+      </Label>
       {children}
       {hint && !error && <p className="mt-1.5 text-xs text-gray-500">{hint}</p>}
       <FieldError id={id ? `${id}-error` : undefined}>{error}</FieldError>
@@ -419,6 +430,65 @@ export function RadioChip({
       <input type="radio" checked={checked} className="h-4 w-4 accent-brand-700 focus:outline-none" {...props} />
       {children}
     </label>
+  );
+}
+
+
+/**
+ * Kontrol segmen (radio) seperti wireframe Validasi Pengembalian.
+ * Setiap opsi bisa punya warna aktif sendiri (mis. Rusak = amber, Hilang = merah).
+ */
+const SEG_TONE = {
+  brand: "bg-brand-700 text-white",
+  amber: "bg-amber-800 text-white",
+  red: "bg-red-800 text-white",
+} as const;
+
+export function Segmented<T extends string>({
+  name,
+  legend,
+  value,
+  onChange,
+  options,
+  disabled,
+}: {
+  name: string;
+  legend: ReactNode;
+  value: T | undefined;
+  onChange: (v: T) => void;
+  options: { value: T; label: string; tone?: keyof typeof SEG_TONE }[];
+  disabled?: boolean;
+}) {
+  return (
+    <fieldset>
+      <legend className="mb-1.5 text-sm font-semibold text-gray-900">{legend}</legend>
+      <div className="flex overflow-hidden rounded-lg border border-gray-300 bg-white">
+        {options.map((o, i) => {
+          const aktif = value === o.value;
+          return (
+            <label
+              key={o.value}
+              className={cn(
+                "relative flex min-h-[52px] flex-1 cursor-pointer items-center justify-center px-2 py-1.5 text-center text-sm leading-tight transition-colors duration-200 has-[:focus-visible]:z-10 has-[:focus-visible]:outline-3 has-[:focus-visible]:-outline-offset-3 has-[:focus-visible]:outline-brand-600 has-[:disabled]:cursor-not-allowed",
+                i > 0 && "border-s border-gray-300",
+                aktif ? cn("font-semibold", SEG_TONE[o.tone ?? "brand"]) : "text-gray-800 hover:bg-gray-50",
+              )}
+            >
+              <input
+                type="radio"
+                name={name}
+                value={o.value}
+                checked={aktif}
+                onChange={() => onChange(o.value)}
+                disabled={disabled}
+                className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0 focus:outline-none disabled:cursor-not-allowed"
+              />
+              <span className="pointer-events-none">{o.label}</span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }
 

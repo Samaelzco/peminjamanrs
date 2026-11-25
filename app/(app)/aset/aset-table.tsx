@@ -75,24 +75,17 @@ export function AsetTable({
                 {a.kategoriNama}
                 {a.deskripsi && ` · ${a.deskripsi}`}
               </p>
-              {(canUpdate || canDelete) && (
-                <div className="relative z-10 mt-auto flex gap-1 pt-2">
-                  {canUpdate && (
-                    <Button variant="ghost" size="sm" className="-ms-3" onClick={() => setForm({ aset: a })} aria-label={`Edit ${a.kodeAset}`}>
-                      Edit
-                    </Button>
-                  )}
-                  {canDelete && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-800 hover:bg-red-50"
-                      onClick={() => setHapus(a)}
-                      aria-label={`Hapus ${a.kodeAset}`}
-                    >
-                      Hapus
-                    </Button>
-                  )}
+              {canUpdate && (
+                <div className="relative z-10 mt-auto pt-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ms-3"
+                    onClick={() => setForm({ aset: a })}
+                    aria-label={`Edit ${a.kodeAset}`}
+                  >
+                    Edit
+                  </Button>
                 </div>
               )}
             </li>
@@ -105,6 +98,14 @@ export function AsetTable({
           key={form.aset?.id ?? "baru"}
           aset={form.aset}
           kategori={kategori}
+          onHapus={
+            canDelete && form.aset
+              ? () => {
+                  setHapus(form.aset!);
+                  setForm(null);
+                }
+              : undefined
+          }
           onClose={() => setForm(null)}
           onSaved={(message) => {
             setForm(null);
@@ -138,11 +139,13 @@ export function AsetTable({
 function AsetSheet({
   aset,
   kategori,
+  onHapus,
   onClose,
   onSaved,
 }: {
   aset?: AsetRow;
   kategori: Kategori[];
+  onHapus?: () => void;
   onClose: () => void;
   onSaved: (message?: string) => void;
 }) {
@@ -199,14 +202,11 @@ function AsetSheet({
         }}
       >
         {action.result && !action.result.ok && <ResultAlert result={action.result} className="" />}
-        <Field
-          id="kategori_id"
-          label="Kategori"
-          error={err("kategori_id")}
-          hint={aset ? "Kategori tidak bisa diubah karena menentukan kode barang." : "Kode barang dibuat otomatis dari prefix kategori."}
-        >
+        <Field id="kategori_id" label="Kategori" required error={err("kategori_id")}>
           {aset ? (
-            <Input id="kategori_id" value={aset.kategoriNama} disabled />
+            <Select id="kategori_id" value={aset.kategoriId} disabled aria-describedby="kategori-kunci">
+              <option value={aset.kategoriId}>{aset.kategoriNama}</option>
+            </Select>
           ) : (
             <Select id="kategori_id" name="kategori_id" defaultValue="" required invalid={!!err("kategori_id")}>
               <option value="" disabled>
@@ -214,13 +214,18 @@ function AsetSheet({
               </option>
               {kategori.map((k) => (
                 <option key={k.id} value={k.id}>
-                  {k.nama} ({k.kode_prefix})
+                  {k.nama}
                 </option>
               ))}
             </Select>
           )}
+          {aset && (
+            <p id="kategori-kunci" className="mt-1.5 text-xs text-gray-500">
+              Kategori menentukan kode barang, jadi tidak bisa diubah.
+            </p>
+          )}
         </Field>
-        <Field id="nama_aset" label="Nama Barang" error={err("nama_aset")}>
+        <Field id="nama_aset" label="Nama Barang" required error={err("nama_aset")}>
           <Input
             id="nama_aset"
             name="nama_aset"
@@ -231,32 +236,42 @@ function AsetSheet({
             required
           />
         </Field>
-        <Field id="deskripsi" label="Deskripsi (opsional)">
+        <Field id="deskripsi" label="Deskripsi">
           <Textarea
             id="deskripsi"
             name="deskripsi"
             rows={3}
-            placeholder="Contoh: 3600 lumens, HDMI/VGA"
+            placeholder="Spesifikasi, kelengkapan, nomor seri"
             maxLength={BATAS.deskripsiAset}
             defaultValue={aset?.deskripsi ?? ""}
           />
         </Field>
         <div className="grid grid-cols-2 gap-3">
+          <Field id="status" label="Status">
+            <Select id="status" name="status" defaultValue={aset?.status ?? "tersedia"} disabled={dipinjam}>
+              {dipinjam && <option value="dipinjam">Dipinjam</option>}
+              <option value="tersedia">Ready</option>
+              <option value="dalam_perbaikan">Perbaikan</option>
+              <option value="hilang">Hilang</option>
+            </Select>
+          </Field>
           <Field id="kondisi" label="Kondisi">
             <Select id="kondisi" name="kondisi" defaultValue={aset?.kondisi ?? "baik"}>
               <option value="baik">Baik</option>
               <option value="rusak">Rusak</option>
             </Select>
           </Field>
-          <Field id="status" label="Ketersediaan">
-            <Select id="status" name="status" defaultValue={aset?.status ?? "tersedia"} disabled={dipinjam}>
-              {dipinjam && <option value="dipinjam">Dipinjam</option>}
-              <option value="tersedia">Tersedia</option>
-              <option value="dalam_perbaikan">Perbaikan</option>
-              <option value="hilang">Hilang</option>
-            </Select>
-          </Field>
         </div>
+        {onHapus && (
+          <button
+            type="button"
+            onClick={onHapus}
+            disabled={action.pending}
+            className="min-h-11 text-sm font-semibold text-red-800 hover:underline disabled:opacity-50"
+          >
+            Hapus barang ini
+          </button>
+        )}
       </form>
     </Sheet>
   );

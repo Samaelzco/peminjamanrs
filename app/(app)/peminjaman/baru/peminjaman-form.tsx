@@ -92,12 +92,6 @@ export function PeminjamanForm({
     });
   }
 
-  const ringkasan = Object.entries(
-    units.reduce<Record<string, number>>((acc, u) => {
-      acc[u.kategori_nama] = (acc[u.kategori_nama] ?? 0) + 1;
-      return acc;
-    }, {}),
-  );
 
   return (
     <form
@@ -256,7 +250,7 @@ export function PeminjamanForm({
                       <p className="mt-0.5 text-[15px] break-words text-gray-900">{u.nama_aset}</p>
                       <p className="text-sm text-gray-500">{u.kategori_nama}</p>
                     </div>
-                    <Pill tone="green">Tersedia</Pill>
+                    <Pill tone="green">Ready</Pill>
                   </div>
                   <div className="mt-2 flex justify-end gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setGanti(u)}>
@@ -280,7 +274,7 @@ export function PeminjamanForm({
           <InfoNote className="mt-4">
             {units.length === 0
               ? "Belum ada unit. Pilih kategori dan jumlah, lalu tekan Tambah Unit. Sistem mengambil unit tersedia dengan kode terkecil."
-              : `${units.length} unit dipilih: ${ringkasan.map(([k, n]) => `${n} ${k}`).join(", ")}.`}
+              : `${units.length} unit dipilih.`}
           </InfoNote>
           <FieldError>{fe("aset_ids")}</FieldError>
         </Card>

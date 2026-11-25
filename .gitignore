@@ -41,6 +41,9 @@ yarn-error.log*
 next-env.d.ts
 
 !.env.example
+figma
+prompt-claude-code-sistem-peminjaman.md
+prompt-pengujian-5-transaksi.md
 
 # playwright
 /tests/.playwright-output/

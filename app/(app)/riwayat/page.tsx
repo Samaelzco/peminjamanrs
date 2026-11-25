@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { LuDownload } from "react-icons/lu";
 import { PEMINJAMAN_ROW_SELECT, PeminjamanList, toPeminjamanRow } from "@/components/peminjaman-table";
-import { PageHeader, buttonClass } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { requirePermission } from "@/lib/auth";
 import { awalHariWita, kondisiCari, parseFilterRiwayat } from "@/lib/riwayat-filter";
 import { createClient } from "@/lib/supabase/server";
@@ -46,36 +45,32 @@ export default async function RiwayatPage({ searchParams }: PageProps<"/riwayat"
   const total = count ?? 0;
   const totalHalaman = Math.max(1, Math.ceil(total / PER_HALAMAN));
 
+  const rows = (data ?? []).map(toPeminjamanRow);
+  // Sarpras melihat siapa yang memasang & mengecek; Administrasi melihat jam keluar/kembali.
+  const tampilPetugas = user.permissions.includes("pemasangan.create");
+  let petugas: Record<string, string> | undefined;
+  if (tampilPetugas) {
+    const ids = [...new Set(rows.flatMap((r) => [r.pasangStaffId, r.kembaliStaffId]).filter((v): v is string => !!v))];
+    const { data: staff } = ids.length ? await supabase.rpc("nama_staff", { p_ids: ids }) : { data: [] };
+    petugas = Object.fromEntries((staff ?? []).map((st) => [st.id, st.nama]));
+  }
+
   return (
     <>
       <PageHeader
         title="Riwayat Peminjaman"
-        description="Semua peminjaman yang pernah dicatat, termasuk yang dibatalkan dan selesai."
-        actions={
-          user.permissions.includes("laporan.export") && (
-            // Tautan biasa (bukan <Link>) karena tujuannya file unduhan dari route handler.
-            <a
-              href={`/riwayat/ekspor${ekspor ? `?${ekspor}` : ""}`}
-              className={buttonClass({ variant: "secondary", className: "w-full bg-white sm:w-auto" })}
-            >
-              <LuDownload className="h-4 w-4" aria-hidden />
-              Unduh Rekap (Excel)
-            </a>
-          )
-        }
+        description={tampilPetugas ? "Termasuk foto & hasil pengecekan setiap unit" : "Semua peminjaman yang pernah dicatat"}
       />
-      <RiwayatFilters value={{ q, status: status ?? "", dari: dari ?? "", sampai: sampai ?? "" }} />
-      <p className="mb-3 text-sm text-gray-500" aria-live="polite">
-        {total === 0
-          ? "Tidak ada peminjaman yang cocok."
-          : `Menampilkan ${from + 1}–${Math.min(from + PER_HALAMAN, total)} dari ${total} peminjaman`}
-      </p>
-      <PeminjamanList
-        rows={(data ?? []).map(toPeminjamanRow)}
-        varian="riwayat"
-        empty="Tidak ada peminjaman yang cocok."
-        bisaUbah={user.permissions.includes("peminjaman.update")}
+      <RiwayatFilters
+        value={{ q, status: status ?? "", dari: dari ?? "", sampai: sampai ?? "" }}
+        eksporHref={user.permissions.includes("laporan.export") ? `/riwayat/ekspor${ekspor ? `?${ekspor}` : ""}` : undefined}
       />
+      <PeminjamanList rows={rows} varian="riwayat" empty="Tidak ada peminjaman yang cocok." petugas={petugas} />
+      {total > 0 && (
+        <p className="mt-4 text-center text-sm text-gray-500" aria-live="polite">
+          {`Menampilkan ${from + 1}–${Math.min(from + PER_HALAMAN, total)} dari ${total} data`}
+        </p>
+      )}
       {totalHalaman > 1 && (
         <RiwayatPagination halaman={Math.min(halaman, totalHalaman)} totalHalaman={totalHalaman} params={filter} />
       )}

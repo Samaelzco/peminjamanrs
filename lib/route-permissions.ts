@@ -16,7 +16,7 @@ const RUTE: { pola: RegExp; permission: Permission[] }[] = [
   { pola: /^\/riwayat(\/|$)/, permission: ["riwayat.view"] },
   { pola: /^\/aset(\/|$)/, permission: ["aset.view"] },
   { pola: /^\/kategori(\/|$)/, permission: ["kategori.view"] },
-  { pola: /^\/akun(\/|$)/, permission: ["user.view"] },
+  { pola: /^\/akun(\/|$)/, permission: ["user.view", "role.view"] },
   { pola: /^\/role(\/|$)/, permission: ["role.view"] },
   { pola: /^\/debug(\/|$)/, permission: ["debug.reset"] },
 ];

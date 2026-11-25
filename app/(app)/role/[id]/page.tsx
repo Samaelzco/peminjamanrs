@@ -45,7 +45,7 @@ export default async function RolePermissionPage({ params }: PageProps<"/role/[i
   return (
     <>
       <PageHeader
-        back={{ href: "/role", label: "Kembali ke daftar role" }}
+        back={{ href: "/akun?tab=role", label: "Kembali ke Role & Permission" }}
         title={`Permission · ${role.nama}`}
         description={role.deskripsi ?? undefined}
       />

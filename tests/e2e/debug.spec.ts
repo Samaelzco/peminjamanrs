@@ -14,9 +14,9 @@ async function login(page: Page, akun: { email: string; password: string }) {
   await page.waitForURL((u) => !u.pathname.startsWith("/login"));
 }
 
-test("Admin: menu & halaman Debug tampil, tombol aktif hanya setelah ketik RESET", async ({ page }) => {
+test("Admin: menu Debug disembunyikan, halaman /debug tetap bisa dibuka; tombol aktif hanya setelah ketik RESET", async ({ page }) => {
   await login(page, AKUN.admin);
-  await expect(page.getByRole("link", { name: "Debug" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Debug" })).toHaveCount(0);
   const res = await page.goto("/debug");
   expect(res?.status()).toBe(200);
   await page.waitForLoadState("networkidle");

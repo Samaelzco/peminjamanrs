@@ -22,6 +22,14 @@ export function formatWaktu(value: string | Date | null | undefined): string {
   return format(new TZDate(new Date(value), TIMEZONE), "d MMM yyyy HH:mm", { locale: localeId });
 }
 
+/** Format ringkas daftar riwayat, contoh "10 Nov 26 08:23" (atau "12 Nov 15:20" tanpa tahun). */
+export function formatRingkas(value: string | Date | null | undefined, denganTahun = true): string {
+  if (!value) return "—";
+  return format(new TZDate(new Date(value), TIMEZONE), denganTahun ? "dd MMM yy HH:mm" : "dd MMM HH:mm", {
+    locale: localeId,
+  });
+}
+
 /** Nilai untuk <input type="datetime-local"> dalam WITA. */
 export function toWitaInput(value: string | Date): string {
   return format(new TZDate(new Date(value), TIMEZONE), "yyyy-MM-dd'T'HH:mm");

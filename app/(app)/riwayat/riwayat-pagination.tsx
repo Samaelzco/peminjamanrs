@@ -32,7 +32,7 @@ export function RiwayatPagination({
   const kotak = "grid h-11 min-w-11 place-items-center rounded-lg border text-sm font-semibold transition-colors duration-200";
 
   return (
-    <nav aria-label="Halaman riwayat" className="mt-4 flex justify-center">
+    <nav aria-label="Halaman riwayat" className="mt-2 flex justify-center">
       <ul className="flex flex-wrap items-center justify-center gap-1.5">
         <li>
           {halaman > 1 ? (

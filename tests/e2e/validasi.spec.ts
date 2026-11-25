@@ -139,6 +139,7 @@ test("Kategori: kode prefix hanya huruf kapital; Akun: aturan password", async (
   await page.locator("#nama").fill("Petugas Uji");
   await page.locator("#email").fill("uji.validasi@example.test");
   await page.locator("#password").fill("passwordsaja");
+  await page.locator("#password_konfirmasi").fill("passwordsaja");
   await page.locator("#role_id").selectOption({ label: "Sarana dan Prasarana" });
   await page.getByRole("button", { name: "Simpan" }).click();
   await expect(page.getByText("Password harus mengandung angka.")).toBeVisible();

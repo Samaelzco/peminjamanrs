@@ -103,7 +103,7 @@ async function pemasangan(page: Page, id: number, jumlahFoto: number) {
   await page.goto(`/peminjaman/${id}/pemasangan`);
   for (const r of await page.locator('input[type="radio"][value="baik"]').all()) await r.check();
   await pilihFoto(page, foto.slice(0, jumlahFoto));
-  await page.getByRole("button", { name: "Simpan Pemasangan" }).click();
+  await page.getByRole("button", { name: "Konfirmasi Pemasangan" }).click();
   await page.waitForURL(new RegExp(`/peminjaman/${id}$`), { timeout: 60_000 });
 }
 
@@ -111,12 +111,13 @@ async function isiPengembalian(page: Page, kondisi: Record<string, { k: "baik" |
   for (const [kode, v] of Object.entries(kondisi)) {
     const li = page.locator("li").filter({ hasText: kode }).filter({ has: page.locator('input[type="radio"]') });
     await li.locator(`input[type="radio"][value="${v.k}"]`).check();
-    await page.getByLabel(`Catatan ${kode}`).fill(v.catatan ?? "");
+    // Kolom Keterangan hanya muncul untuk Rusak / Hilang.
+    if (v.k !== "baik") await page.getByLabel(`Keterangan ${kode}`).fill(v.catatan ?? "");
   }
 }
 
 async function simpanPengembalian(page: Page, id: number) {
-  await page.getByRole("button", { name: "Simpan Pengembalian" }).click();
+  await page.getByRole("button", { name: "Konfirmasi Pengembalian" }).click();
   await page.waitForURL(new RegExp(`/peminjaman/${id}$`), { timeout: 60_000 });
 }
 
@@ -248,8 +249,8 @@ test("Langkah 1 – TRX-004: ganti unit, kembali rusak & hilang", async () => {
     await sarpras.goto(`/peminjaman/${id}/pengembalian`);
     await isiPengembalian(sarpras, { "TI-LPT-002": { k: "rusak", catatan: "" }, "TI-CAM-001": { k: "hilang", catatan: "Tidak ditemukan di ruangan" } });
     await pilihFoto(sarpras, foto.slice(0, 3));
-    await sarpras.getByRole("button", { name: "Simpan Pengembalian" }).click();
-    const msg = sarpras.getByRole("alert").filter({ hasText: /catatan/i });
+    await sarpras.getByRole("button", { name: "Konfirmasi Pengembalian" }).click();
+    const msg = sarpras.getByRole("alert").filter({ hasText: /keterangan/i });
     await expect(msg).toBeVisible();
     const teks = (await msg.innerText()).trim();
     await shot(sarpras, "1.6-catatan-wajib");
@@ -552,15 +553,13 @@ test("Pemeriksaan akhir", async () => {
     await admin.goto("/riwayat");
     for (const label of Object.keys(p)) await expect(admin.getByRole("link", { name: p[label].kode })).toBeVisible();
     await shot(admin, "A.4-riwayat");
-    await admin.locator("#q").fill("Sari Wulandari");
-    await admin.getByRole("button", { name: "Terapkan" }).click();
+    await admin.locator("#q").fill("Sari Wulandari"); // filter diterapkan otomatis
     await admin.waitForURL(/q=Sari/);
-    await expect(admin.getByText("dari 1 peminjaman")).toBeVisible();
+    await expect(admin.getByText("dari 1 data")).toBeVisible();
     await expect(admin.getByRole("link", { name: p["TRX-004"].kode })).toBeVisible();
     await admin.locator("#q").fill("TI-PRJ-001");
-    await admin.getByRole("button", { name: "Terapkan" }).click();
     await admin.waitForURL(/q=TI-PRJ-001/);
-    await expect(admin.getByText("dari 3 peminjaman")).toBeVisible();
+    await expect(admin.getByText("dari 3 data")).toBeVisible();
     for (const l of ["TRX-001", "TRX-002", "TRX-003"]) await expect(admin.getByRole("link", { name: p[l].kode })).toBeVisible();
     await shot(admin, "A.4-riwayat-cari-prj001");
     return `5 transaksi tampil; "Sari Wulandari" → ${p["TRX-004"].kode}; "TI-PRJ-001" → ${["TRX-001", "TRX-002", "TRX-003"].map((l) => p[l].kode).join(", ")}`;

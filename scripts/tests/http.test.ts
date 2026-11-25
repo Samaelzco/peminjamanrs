@@ -45,8 +45,8 @@ async function main() {
       const html = await r.text();
       return (r.status === 200 && html.includes(adm.email)) || `status ${r.status}`;
     });
-    await check("Admin bisa membuka Role & Permission", async () => {
-      const r = await get("/role", ca);
+    await check("Admin bisa membuka tab Role & Permission di Kelola Akun", async () => {
+      const r = await get("/akun?tab=role", ca);
       return (r.status === 200 && (await r.text()).includes("Sarana dan Prasarana")) || `status ${r.status}`;
     });
     await check("Sarpras: menu Kelola Akun tidak tampil", async () => {
@@ -130,7 +130,7 @@ async function main() {
         const formA = await get(`/peminjaman/${pid}/pemasangan`, ca);
         const formS = await (await get(`/peminjaman/${pid}/pemasangan`, cs)).text();
         if (!(await formA.text()).includes("Akses ditolak")) return "admin bisa buka form pemasangan";
-        if (!formS.includes("Simpan Pemasangan") || !formS.includes('capture="environment"')) return "form pemasangan tidak sesuai";
+        if (!formS.includes("Konfirmasi Pemasangan") || !formS.includes('capture="environment"')) return "form pemasangan tidak sesuai";
 
         const { data: det } = await s.from("detail_peminjaman").select("id").eq("peminjaman_id", pid).single();
         const g = await s.rpc("ganti_unit_pemasangan", { p_detail_id: det!.id, p_aset_baru_id: prj3, p_alasan: "Lampu mati" });
@@ -149,7 +149,7 @@ async function main() {
           html.includes("Unit TI-LPT-003 diganti TI-LPT-004") && html.includes("Lampu mati") &&
           html.includes("Pemasangan 1 unit dengan 2 foto");
         const formK = await (await get(`/peminjaman/${pid}/pengembalian`, cs)).text();
-        return (ok && formK.includes("Simpan Pengembalian")) || `signed=${signedCount}, ok=${ok}`;
+        return (ok && formK.includes("Konfirmasi Pengembalian")) || `signed=${signedCount}, ok=${ok}`;
       } finally {
         await bersihkan([pid], ["TI-LPT-003", "TI-LPT-004"]);
       }

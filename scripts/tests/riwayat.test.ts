@@ -44,7 +44,7 @@ async function main() {
     await check("Halaman 1 berisi 20 baris + pagination", async () => {
       const html = await get("/riwayat", cookie);
       const rows = (html.match(/href="\/peminjaman\/\d+"/g) ?? []).length;
-      return (rows === 20 && html.includes("dari 23 peminjaman") && html.includes("Berikutnya")) || `rows ${rows}`;
+      return (rows === 20 && html.includes("dari 23 data") && html.includes("Berikutnya")) || `rows ${rows}`;
     });
     await check("Halaman 2 berisi 3 baris sisanya", async () => {
       const html = await get("/riwayat?halaman=2", cookie);
@@ -53,27 +53,27 @@ async function main() {
     });
     await check("Cari nama peminjam", async () => {
       const html = await get("/riwayat?q=Budi", cookie);
-      return (html.includes("Budi Riwayat") && html.includes("dari 1 peminjaman")) || "tidak cocok";
+      return (html.includes("Budi Riwayat") && html.includes("dari 1 data")) || "tidak cocok";
     });
     await check("Cari divisi", async () => {
       const html = await get("/riwayat?q=Radiologi", cookie);
-      return html.includes("dari 1 peminjaman") || "tidak cocok";
+      return html.includes("dari 1 data") || "tidak cocok";
     });
     await check("Cari kode peminjaman", async () => {
       const html = await get(`/riwayat?q=${kode(dibuat[5])}`, cookie);
-      return (html.includes(kode(dibuat[5])) && html.includes("dari 1 peminjaman")) || "tidak cocok";
+      return (html.includes(kode(dibuat[5])) && html.includes("dari 1 data")) || "tidak cocok";
     });
     await check("Cari kode aset (TI-PRJ-002)", async () => {
       const html = await get("/riwayat?q=TI-PRJ-002", cookie);
-      return (html.includes(kode(dibuat[2])) && html.includes("dari 1 peminjaman")) || "tidak cocok";
+      return (html.includes(kode(dibuat[2])) && html.includes("dari 1 data")) || "tidak cocok";
     });
     await check("Filter status Diajukan", async () => {
       const html = await get("/riwayat?status=diajukan", cookie);
-      return (html.includes("Masih Diajukan") && html.includes("dari 1 peminjaman")) || "tidak cocok";
+      return (html.includes("Masih Diajukan") && html.includes("dari 1 data")) || "tidak cocok";
     });
     await check("Filter rentang tanggal (03–05 Jan 2026 WITA) → 3 baris", async () => {
       const html = await get("/riwayat?dari=2026-01-03&sampai=2026-01-05", cookie);
-      return html.includes("dari 3 peminjaman") || "tidak cocok";
+      return html.includes("dari 3 data") || "tidak cocok";
     });
   } finally {
     await bersihkan(dibuat, ["TI-LPT-001", "TI-PRJ-002"]);

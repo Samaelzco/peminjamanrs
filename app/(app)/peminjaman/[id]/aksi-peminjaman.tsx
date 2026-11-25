@@ -4,9 +4,8 @@ import { useState } from "react";
 import { LuCalendarPlus, LuPencil, LuUndo2, LuWrench, LuX } from "react-icons/lu";
 import { ConfirmDialog } from "@/components/overlay";
 import { ResultAlert, useAction } from "@/components/feedback";
-import { Alert, Button, ButtonLink, Label, Textarea } from "@/components/ui";
+import { Alert, Button, ButtonLink } from "@/components/ui";
 import type { StatusPeminjaman } from "@/lib/labels";
-import { BATAS } from "@/lib/validation";
 import { batalkanPeminjaman } from "../actions";
 
 type Props = {
@@ -20,7 +19,6 @@ type Props = {
 export function AksiPeminjaman({ id, kode, status, terpasang, can }: Props) {
   const action = useAction();
   const [batal, setBatal] = useState(false);
-  const [alasan, setAlasan] = useState("");
   // Belum dipasang: diajukan, atau terlambat sejak dicatat (rencana kembali sudah lewat).
   const menungguPasang = (status === "diajukan" || status === "terlambat") && !terpasang;
   const berjalan = (status === "dipinjam" || status === "terlambat") && terpasang;
@@ -68,36 +66,18 @@ export function AksiPeminjaman({ id, kode, status, terpasang, can }: Props) {
       <ConfirmDialog
         open={batal}
         title="Batalkan Peminjaman?"
-        message={
-          <>
-            Yakin membatalkan peminjaman <strong className="text-gray-900">{kode}</strong>? Semua unitnya kembali tersedia
-            untuk dipinjam.
-          </>
-        }
-        confirmLabel="Batalkan"
-        icon="warning"
+        message={`Yakin membatalkan peminjaman id ${kode}`}
+        confirmLabel="Yakin"
+        cancelLabel="Tidak"
+        icon="ban"
         pending={action.pending}
         onClose={() => {
           setBatal(false);
           action.reset();
         }}
-        onConfirm={() => action.run(() => batalkanPeminjaman(id, alasan), () => setBatal(false))}
+        onConfirm={() => action.run(() => batalkanPeminjaman(id, ""), () => setBatal(false))}
       >
-        {action.result && !action.result.ok && (
-          <Alert tone="danger" className="mb-3">
-            {action.result.error}
-          </Alert>
-        )}
-        <Label htmlFor="alasan">Alasan (opsional)</Label>
-        <Textarea
-          id="alasan"
-          name="alasan"
-          rows={2}
-          maxLength={BATAS.alasan}
-          value={alasan}
-          onChange={(e) => setAlasan(e.target.value)}
-          className="min-h-16"
-        />
+        {action.result && !action.result.ok && <Alert tone="danger">{action.result.error}</Alert>}
       </ConfirmDialog>
     </div>
   );

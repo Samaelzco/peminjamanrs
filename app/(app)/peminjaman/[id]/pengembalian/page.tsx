@@ -26,7 +26,7 @@ export default async function PengembalianPage({ params }: PageProps<"/peminjama
   return (
     <>
       <PageHeader
-        back={{ href: `/peminjaman/${p.id}`, label: `Kembali ke ${p.kode}` }}
+        back={{ href: "/", label: "Kembali ke Dashboard" }}
         title={`Validasi Pengembalian · ${p.kode}`}
         description="Cek kondisi barang di lokasi peminjam"
       />

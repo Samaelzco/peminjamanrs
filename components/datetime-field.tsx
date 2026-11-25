@@ -59,7 +59,8 @@ export function DateTimeField({
   required?: boolean;
   error?: string;
   tanggalSaja?: boolean;
-  onChange?: (lokal: string | null) => void;
+  /** `teks` = isi tampilan; kosong berarti field dikosongkan. */
+  onChange?: (lokal: string | null, teks: string) => void;
 }) {
   const [teks, setTeks] = useState(defaultValue ? lokalKeTampilan(defaultValue) : "");
   const [disentuh, setDisentuh] = useState(false);
@@ -70,7 +71,7 @@ export function DateTimeField({
 
   function set(v: string) {
     setTeks(v);
-    onChange?.(tampilanKeLokal(v, tanggalSaja));
+    onChange?.(tampilanKeLokal(v, tanggalSaja), v);
   }
 
   return (

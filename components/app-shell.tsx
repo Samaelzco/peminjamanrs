@@ -3,18 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import {
-  LuBox,
-  LuBug,
-  LuChevronRight,
-  LuCirclePlus,
-  LuClock,
-  LuHouse,
-  LuKeyRound,
-  LuLogOut,
-  LuTag,
-  LuUsers,
-} from "react-icons/lu";
+import { LuBox, LuChevronRight, LuCirclePlus, LuClock, LuHouse, LuLogOut, LuTag, LuUsers } from "react-icons/lu";
 import type { IconType } from "react-icons";
 import { BrandMark } from "@/components/brand";
 import { cn } from "@/components/ui";
@@ -28,8 +17,6 @@ const ICONS: Record<MenuIcon, IconType> = {
   aset: LuBox,
   kategori: LuTag,
   akun: LuUsers,
-  role: LuKeyRound,
-  debug: LuBug,
 };
 
 type User = { nama: string; email: string; roleNama: string };
@@ -63,9 +50,8 @@ export function AppShell({ menu, user, headerRight, children }: Props) {
         aria-label="Menu utama"
       >
         <div className="flex h-16 items-center gap-3 border-b border-gray-200 px-5">
-          <Link href="/" className="flex items-center gap-3 rounded-md">
-            <BrandMark />
-            <span className="text-sm leading-tight font-semibold text-gray-900">Peminjaman Barang</span>
+          <Link href="/" className="rounded-md" aria-label="Ke dashboard">
+            <BrandMark className="h-9" />
           </Link>
         </div>
         <nav className="flex-1 overflow-y-auto p-3">
@@ -119,7 +105,7 @@ export function AppShell({ menu, user, headerRight, children }: Props) {
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-[backdrop-filter]:bg-white/85">
           <div className="mx-auto grid h-14 max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-2 px-4 md:px-6 lg:h-16 lg:grid-cols-[1fr_auto] lg:px-8">
             <Link href="/" className="justify-self-start rounded-md lg:hidden" aria-label="Ke dashboard">
-              <BrandMark />
+              <BrandMark className="h-7" priority />
             </Link>
             <p className="truncate text-center text-base font-semibold text-gray-900 lg:text-left lg:text-sm lg:font-medium lg:text-gray-500">
               <span className="lg:hidden">Peminjaman Barang</span>

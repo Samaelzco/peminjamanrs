@@ -66,12 +66,7 @@ export function KategoriTable({
           <ul className="mt-2 divide-y divide-gray-200">
             {hasil.map((k) => (
               <li key={k.id} className="flex items-center gap-3 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] break-words text-gray-900">{k.nama}</p>
-                  <p className="text-xs text-gray-500">
-                    Prefix <span className="font-mono">{k.kodePrefix}</span> · {k.jumlahAset} unit
-                  </p>
-                </div>
+                <p className="min-w-0 flex-1 text-[15px] break-words text-gray-900">{k.nama}</p>
                 {canUpdate && (
                   <Button variant="ghost" size="sm" onClick={() => setForm({ kategori: k })} aria-label={`Edit ${k.nama}`}>
                     Edit
@@ -183,7 +178,7 @@ function KategoriSheet({
         }}
       >
         {action.result && !action.result.ok && <ResultAlert result={action.result} className="" />}
-        <Field id="nama" label="Nama Kategori" error={err("nama")}>
+        <Field id="nama" label="Nama Kategori" required error={err("nama")}>
           <Input
             id="nama"
             name="nama"
@@ -198,6 +193,7 @@ function KategoriSheet({
         <Field
           id="kode_prefix"
           label="Kode Prefix"
+          required
           error={err("kode_prefix")}
           hint={prefixLocked ? "Prefix dikunci karena kategori sudah punya unit." : "Dipakai untuk kode barang, contoh TI-LPT-001."}
         >

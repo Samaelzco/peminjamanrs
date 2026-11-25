@@ -1,21 +1,22 @@
 import type { Permission } from "@/lib/permissions";
 
-export type MenuIcon = "dashboard" | "baru" | "riwayat" | "aset" | "kategori" | "akun" | "role" | "debug";
-export type MenuItem = { href: string; label: string; permission: Permission; icon: MenuIcon };
+export type MenuIcon = "dashboard" | "baru" | "riwayat" | "aset" | "kategori" | "akun";
+/** `permission`: cukup salah satu. */
+export type MenuItem = { href: string; label: string; permission: Permission[]; icon: MenuIcon };
 
+// Halaman Debug sengaja tidak ada di menu; tetap bisa dibuka lewat URL /debug.
+// Role & Permission digabung ke halaman Kelola Akun (tab).
 export const MENU: MenuItem[] = [
-  { href: "/", label: "Dashboard", permission: "dashboard.view", icon: "dashboard" },
-  { href: "/peminjaman/baru", label: "Peminjaman Baru", permission: "peminjaman.create", icon: "baru" },
-  { href: "/riwayat", label: "Riwayat", permission: "riwayat.view", icon: "riwayat" },
-  { href: "/aset", label: "Data Barang", permission: "aset.view", icon: "aset" },
-  { href: "/kategori", label: "Kategori", permission: "kategori.view", icon: "kategori" },
-  { href: "/akun", label: "Kelola Akun", permission: "user.view", icon: "akun" },
-  { href: "/role", label: "Role & Permission", permission: "role.view", icon: "role" },
-  { href: "/debug", label: "Debug", permission: "debug.reset", icon: "debug" },
+  { href: "/", label: "Dashboard", permission: ["dashboard.view"], icon: "dashboard" },
+  { href: "/peminjaman/baru", label: "Peminjaman Baru", permission: ["peminjaman.create"], icon: "baru" },
+  { href: "/riwayat", label: "Riwayat", permission: ["riwayat.view"], icon: "riwayat" },
+  { href: "/aset", label: "Data Barang", permission: ["aset.view"], icon: "aset" },
+  { href: "/kategori", label: "Kategori", permission: ["kategori.view"], icon: "kategori" },
+  { href: "/akun", label: "Kelola Akun", permission: ["user.view", "role.view"], icon: "akun" },
 ];
 
-export function menuFor(permissions: readonly string[], opsi: { debug?: boolean } = {}) {
-  return MENU.filter((m) => permissions.includes(m.permission) && (m.icon !== "debug" || opsi.debug));
+export function menuFor(permissions: readonly string[]) {
+  return MENU.filter((m) => m.permission.some((p) => permissions.includes(p)));
 }
 
 /**

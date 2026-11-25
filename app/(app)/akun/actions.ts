@@ -21,6 +21,8 @@ const baseSchema = z.object({
 
 const createSchema = baseSchema.extend({
   password: passwordSchema,
+  /** Akun langsung aktif (default) atau dibuat non-aktif. */
+  aktif: z.boolean().optional().default(true),
 });
 
 const updateSchema = baseSchema.extend({
@@ -40,7 +42,9 @@ export async function createAkun(input: AkunInput): Promise<ActionResult> {
     await authorize("user.create");
     const parsed = createSchema.safeParse(input);
     if (!parsed.success) return validationError(parsed.error);
-    const { nama, email, password, role_id } = parsed.data;
+    const { nama, email, password, role_id, aktif } = parsed.data;
+    // Membuat akun non-aktif sama dengan menonaktifkan akun.
+    if (!aktif) await authorize("user.toggle-status");
 
     const supabase = await createClient();
     const { data: dup } = await supabase.from("staff_it").select("id").eq("email", email).maybeSingle();
@@ -62,7 +66,7 @@ export async function createAkun(input: AkunInput): Promise<ActionResult> {
     // Insert profil memakai client user, sehingga RLS (user.create) ikut memeriksa.
     const { error } = await supabase
       .from("staff_it")
-      .insert({ id: created.user.id, nama, email, role_id, status: "aktif" });
+      .insert({ id: created.user.id, nama, email, role_id, status: aktif ? "aktif" : "non_aktif" });
     if (error) {
       await admin.auth.admin.deleteUser(created.user.id);
       return { ok: false, error: dbErrorMessage(error) };

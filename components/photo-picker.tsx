@@ -61,7 +61,7 @@ export function PhotoPicker({
 
   return (
     <div>
-      <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+      <ul className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
         {photos.map((p) => (
           <li key={p.id} className="relative aspect-square overflow-hidden rounded-lg border border-gray-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -85,22 +85,23 @@ export function PhotoPicker({
           <button
             type="button"
             disabled={disabled || busy}
-            onClick={() => galleryRef.current?.click()}
-            className={`${TILE} w-full border-brand-300 bg-brand-50/50 text-brand-700 hover:bg-brand-50`}
+            onClick={() => cameraRef.current?.click()}
+            className={`${TILE} w-full border-transparent bg-gray-300 text-gray-600 hover:bg-gray-400/60`}
+            aria-label="Ambil foto dengan kamera"
           >
-            {busy ? <Spinner className="h-5 w-5" /> : <LuPlus className="h-6 w-6" aria-hidden />}
-            {busy ? "Proses..." : "Foto"}
+            <LuCamera className="h-6 w-6" aria-hidden />
           </button>
         </li>
         <li>
           <button
             type="button"
             disabled={disabled || busy}
-            onClick={() => cameraRef.current?.click()}
-            className={`${TILE} w-full border-gray-300 text-gray-600 hover:bg-gray-50`}
+            onClick={() => galleryRef.current?.click()}
+            className={`${TILE} w-full border-gray-400 bg-white font-medium text-gray-700 hover:bg-gray-50`}
+            aria-label="Tambah foto dari galeri"
           >
-            <LuCamera className="h-6 w-6" aria-hidden />
-            Kamera
+            {busy ? <Spinner className="h-5 w-5" /> : <LuPlus className="h-5 w-5" aria-hidden />}
+            <span className="text-[13px]">{busy ? "Proses..." : "Foto"}</span>
           </button>
         </li>
       </ul>

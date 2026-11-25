@@ -7,7 +7,7 @@ export type StatusAset = Enums["status_aset"];
 export type KondisiAset = Enums["kondisi_aset"];
 
 export const STATUS_ASET: Record<StatusAset, { label: string; tone: Tone }> = {
-  tersedia: { label: "Tersedia", tone: "green" },
+  tersedia: { label: "Ready", tone: "green" },
   dipinjam: { label: "Dipinjam", tone: "blue" },
   dalam_perbaikan: { label: "Perbaikan", tone: "yellow" },
   hilang: { label: "Hilang", tone: "red" },

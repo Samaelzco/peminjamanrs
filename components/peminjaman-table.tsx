@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { EmptyState, Pill, cn } from "@/components/ui";
-import { formatTanggal, formatWaktu } from "@/lib/datetime";
+import { formatRingkas, formatTanggal } from "@/lib/datetime";
 import { STATUS_PEMINJAMAN, type StatusPeminjaman } from "@/lib/labels";
 
 export type PeminjamanRow = {
@@ -20,11 +20,13 @@ export type PeminjamanRow = {
   units: string[];
   /** Ringkasan barang per kategori, contoh "Proyektor, Speaker ×2". */
   barang: string;
+  pasangStaffId: string | null;
+  kembaliStaffId: string | null;
 };
 
 /** Kolom select Supabase yang cocok dengan toPeminjamanRow. */
 export const PEMINJAMAN_ROW_SELECT =
-  "id, kode_peminjaman, status, nama_peminjam, kontak_peminjam, divisi_peminjam, ruangan, tgl_peminjaman, tgl_rencana_kembali, perpanjangan_dari, detail_peminjaman(aset(kode_aset, kategori(nama))), pemasangan(id), pengembalian(tgl_kembali)";
+  "id, kode_peminjaman, status, nama_peminjam, kontak_peminjam, divisi_peminjam, ruangan, tgl_peminjaman, tgl_rencana_kembali, perpanjangan_dari, detail_peminjaman(aset(kode_aset, kategori(nama))), pemasangan(id, staff_id), pengembalian(tgl_kembali, staff_id)";
 
 type RawRow = {
   id: number;
@@ -38,8 +40,8 @@ type RawRow = {
   tgl_rencana_kembali: string;
   perpanjangan_dari: number | null;
   detail_peminjaman: { aset: { kode_aset: string; kategori: { nama: string } | null } | null }[];
-  pemasangan: { id: number } | null;
-  pengembalian: { tgl_kembali: string } | null;
+  pemasangan: { id: number; staff_id: string } | null;
+  pengembalian: { tgl_kembali: string; staff_id: string } | null;
 };
 
 export function ringkasBarang(namaKategori: string[]) {
@@ -66,6 +68,8 @@ export function toPeminjamanRow(r: RawRow): PeminjamanRow {
       .map((d) => d.aset?.kode_aset ?? "")
       .filter(Boolean)
       .sort((a, b) => a.length - b.length || a.localeCompare(b)),
+    pasangStaffId: r.pemasangan?.staff_id ?? null,
+    kembaliStaffId: r.pengembalian?.staff_id ?? null,
     barang: ringkasBarang(r.detail_peminjaman.map((d) => d.aset?.kategori?.nama ?? "").filter(Boolean)),
   };
 }
@@ -84,12 +88,15 @@ export function PeminjamanCard({
   varian = "aktif",
   aksi,
   meta,
+  kanan,
 }: {
   row: PeminjamanRow;
   varian?: "aktif" | "riwayat";
   aksi?: ReactNode;
   /** Ganti baris keterangan bawaan. */
   meta?: ReactNode;
+  /** Ganti pill status di kanan atas. */
+  kanan?: ReactNode;
 }) {
   return (
     <li className="group relative rounded-xl border border-gray-200 bg-white p-4 transition-shadow duration-200 hover:shadow-[0_6px_20px_rgba(15,23,42,.06)]">
@@ -102,13 +109,13 @@ export function PeminjamanCard({
             >
               {row.kode}
             </Link>
-            <StatusPill status={row.status} />
+            {kanan ?? <StatusPill status={row.status} />}
           </div>
           <p className="mt-1 text-[15px] break-words text-gray-900">
             {row.namaPeminjam} · {row.divisi}
           </p>
           {meta ?? (
-            <div className="mt-1 space-y-1 text-sm text-gray-500">
+            <div className={cn("mt-1 space-y-1 text-gray-500", varian === "aktif" ? "text-sm" : "text-[13px]")}>
               {varian === "aktif" ? (
                 <>
                   <p className="break-words">
@@ -122,7 +129,7 @@ export function PeminjamanCard({
                 <>
                   <p className="break-words">{row.barang || row.units.join(", ")}</p>
                   <p>
-                    Keluar {formatWaktu(row.tglPeminjaman)} · Kembali {row.tglKembali ? formatWaktu(row.tglKembali) : "—"}
+                    Keluar {formatRingkas(row.tglPeminjaman)} · Kembali {formatRingkas(row.tglKembali, false)}
                   </p>
                 </>
               )}
@@ -141,17 +148,24 @@ export function PeminjamanCard({
   );
 }
 
+/** "Made Wirawan" → "Made W." (seperti wireframe Riwayat Sarpras). */
+export function namaPendek(nama: string | null | undefined) {
+  if (!nama) return "—";
+  const kata = nama.trim().split(/\s+/);
+  return kata.length > 1 ? `${kata[0]} ${kata[kata.length - 1][0]}.` : kata[0];
+}
+
 export function PeminjamanList({
   rows,
   empty = "Tidak ada data.",
-  bisaUbah = false,
   varian = "aktif",
+  petugas,
 }: {
   rows: PeminjamanRow[];
   empty?: string;
-  /** Tampilkan tautan "Ubah" (permission peminjaman.update). */
-  bisaUbah?: boolean;
   varian?: "aktif" | "riwayat";
+  /** Bila diisi (id staf → nama), baris bawah menampilkan petugas pemasangan & pengecekan. */
+  petugas?: Record<string, string>;
 }) {
   if (rows.length === 0) return <EmptyState>{empty}</EmptyState>;
   return (
@@ -161,15 +175,15 @@ export function PeminjamanList({
           key={r.id}
           row={r}
           varian={varian}
-          aksi={
-            bisaUbah ? (
-              <Link
-                href={`/peminjaman/${r.id}/ubah`}
-                className="inline-flex min-h-9 items-center rounded-md text-sm font-semibold text-brand-700 hover:underline"
-                aria-label={`Ubah ${r.kode}`}
-              >
-                Ubah
-              </Link>
+          meta={
+            petugas ? (
+              <div className="mt-1 space-y-1 text-[13px] text-gray-500">
+                <p className="break-words">{r.barang || r.units.join(", ")}</p>
+                <p>
+                  Dipasang oleh {namaPendek(r.pasangStaffId && petugas[r.pasangStaffId])} · Dicek oleh{" "}
+                  {namaPendek(r.kembaliStaffId && petugas[r.kembaliStaffId])}
+                </p>
+              </div>
             ) : undefined
           }
         />

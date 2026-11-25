@@ -22,9 +22,9 @@ export default async function PemasanganPage({ params }: PageProps<"/peminjaman/
   return (
     <>
       <PageHeader
-        back={{ href: `/peminjaman/${p.id}`, label: `Kembali ke ${p.kode}` }}
+        back={{ href: "/", label: "Kembali ke Dashboard" }}
         title={`Validasi Pemasangan · ${p.kode}`}
-        description="Tes alat, pasang di lokasi, lalu foto bukti pemasangan"
+        description="Tes alat, pasang di lokasi, lalu foto tiap unit"
       />
       {!bisa ? (
         <Alert tone="warning">

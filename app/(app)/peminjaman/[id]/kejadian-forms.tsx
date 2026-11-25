@@ -2,10 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { LuArrowLeftRight } from "react-icons/lu";
+import { LuArrowLeftRight, LuBox } from "react-icons/lu";
 import { Sheet, SheetActions } from "@/components/overlay";
 import { PhotoPicker, type PickedPhoto } from "@/components/photo-picker";
-import { Alert, Button, Card, CardTitle, Field, Label, RadioChip, Select, Spinner, Textarea } from "@/components/ui";
+import { Alert, Button, Card, Field, Segmented, Select, Spinner, Textarea } from "@/components/ui";
 import { removePhotos, uploadPhotos } from "@/lib/upload";
 import { BATAS } from "@/lib/validation";
 import { opsiGantiUnit, type UnitTersedia } from "../actions";
@@ -68,12 +68,26 @@ function useSubmitDenganFoto(jenis: "pemasangan" | "pengembalian", peminjamanId:
 
 function UnitKepala({ u, keterangan }: { u: UnitForm; keterangan: string }) {
   return (
-    <div className="min-w-0">
-      <p className="font-bold break-words text-gray-900">
-        {u.kodeAset} · <span className="font-semibold">{u.namaAset}</span>
-      </p>
-      <p className="text-sm text-gray-500">{keterangan}</p>
+    <div className="flex min-w-0 items-center gap-3">
+      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-gray-200 text-gray-500" aria-hidden>
+        <LuBox className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[15px] font-bold break-words text-gray-900">
+          {u.kodeAset} · {u.namaAset}
+        </p>
+        <p className="text-sm text-gray-500">{keterangan}</p>
+      </div>
     </div>
+  );
+}
+
+function FotoBukti({ judul, children }: { judul: string; children: React.ReactNode }) {
+  return (
+    <section aria-label={judul}>
+      <h2 className="mb-2 text-sm font-semibold text-gray-900">{judul}</h2>
+      {children}
+    </section>
   );
 }
 
@@ -111,7 +125,7 @@ export function PemasanganForm({ peminjamanId, units }: { peminjamanId: number; 
       onSubmit={(e) => {
         e.preventDefault();
         if (belumDiisi.length) {
-          s.setError(`Isi kondisi keluar untuk ${belumDiisi.map((u) => u.kodeAset).join(", ")}.`);
+          s.setError(`Isi hasil tes alat untuk ${belumDiisi.map((u) => u.kodeAset).join(", ")}.`);
           return;
         }
         s.submit(photos, (id, foto) =>
@@ -135,50 +149,43 @@ export function PemasanganForm({ peminjamanId, units }: { peminjamanId: number; 
         {units.map((u) => (
           <li key={u.detailId}>
             <Card as="div" className="h-full">
-              <div className="flex items-start justify-between gap-2">
-                <UnitKepala u={u} keterangan={`Kategori ${u.kategoriNama}`} />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setGanti(u)}
-                  disabled={s.pending}
-                  className="-me-2 shrink-0"
-                >
-                  <LuArrowLeftRight className="h-4 w-4" aria-hidden />
-                  Ganti Unit
-                </Button>
-              </div>
+              <UnitKepala u={u} keterangan={`Kategori ${u.kategoriNama}`} />
               {u.statusAset !== "tersedia" && (
                 <Alert tone="warning" className="mt-3">
                   Status barang saat ini: {u.statusAset}. Ganti unit ini.
                 </Alert>
               )}
-              <fieldset className="mt-3">
-                <legend className="mb-1.5 text-sm font-semibold text-gray-900">Hasil Tes / Kondisi Keluar</legend>
-                <div className="grid grid-cols-2 gap-2">
-                  {(["baik", "rusak"] as const).map((k) => (
-                    <RadioChip
-                      key={k}
-                      name={`kondisi-${u.detailId}`}
-                      value={k}
-                      checked={kondisi[u.detailId] === k}
-                      onChange={() => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
-                      disabled={s.pending}
-                    >
-                      {k === "baik" ? "Baik" : "Rusak"}
-                    </RadioChip>
-                  ))}
-                </div>
-              </fieldset>
+              <div className="mt-3">
+                <Segmented
+                  name={`kondisi-${u.detailId}`}
+                  legend="Hasil Tes Alat"
+                  value={kondisi[u.detailId]}
+                  onChange={(k) => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
+                  options={[
+                    { value: "baik", label: "Baik" },
+                    { value: "rusak", label: "Rusak", tone: "amber" },
+                  ]}
+                  disabled={s.pending}
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setGanti(u)}
+                disabled={s.pending}
+                className="-ms-3 mt-2"
+              >
+                <LuArrowLeftRight className="h-4 w-4" aria-hidden />
+                Ganti Unit
+              </Button>
             </Card>
           </li>
         ))}
       </ul>
 
-      <Card>
-        <CardTitle className="mb-3">Foto Bukti Pemasangan Barang</CardTitle>
+      <FotoBukti judul="Foto Bukti Pemasangan Barang">
         <PhotoPicker photos={photos} onChange={setPhotos} disabled={s.pending} />
-      </Card>
+      </FotoBukti>
 
       {s.error && (
         <Alert tone="danger" onDismiss={() => s.setError(null)}>
@@ -186,7 +193,7 @@ export function PemasanganForm({ peminjamanId, units }: { peminjamanId: number; 
         </Alert>
       )}
       <TombolSimpan tahap={s.tahap} pending={s.pending}>
-        Simpan Pemasangan
+        Konfirmasi Pemasangan
       </TombolSimpan>
 
       {ganti && (
@@ -309,10 +316,10 @@ function GantiUnitSheet({
 // ---------------------------------------------------------------------
 type KondisiMasuk = "baik" | "rusak" | "hilang";
 
-const PILIHAN_MASUK: { k: KondisiMasuk; label: string }[] = [
-  { k: "baik", label: "Baik" },
-  { k: "rusak", label: "Rusak" },
-  { k: "hilang", label: "Tidak Ditemukan (Hilang)" },
+const PILIHAN_MASUK: { value: KondisiMasuk; label: string; tone?: "amber" | "red" }[] = [
+  { value: "baik", label: "Baik" },
+  { value: "rusak", label: "Rusak", tone: "amber" },
+  { value: "hilang", label: "Tidak Ditemukan (Hilang)", tone: "red" },
 ];
 
 export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number; units: UnitForm[] }) {
@@ -334,7 +341,7 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
         setCobaSimpan(true);
         if (kurang.length) {
           s.setError(
-            `Lengkapi kondisi masuk (dan catatan untuk rusak/hilang): ${kurang.map((u) => u.kodeAset).join(", ")}.`,
+            `Lengkapi kondisi saat dicek (dan keterangan untuk rusak/hilang): ${kurang.map((u) => u.kodeAset).join(", ")}.`,
           );
           return;
         }
@@ -345,7 +352,7 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
             units: units.map((u) => ({
               detail_id: u.detailId,
               kondisi_masuk: kondisi[u.detailId],
-              catatan: catatan[u.detailId] ?? "",
+              catatan: butuhCatatan(u.detailId) ? (catatan[u.detailId] ?? "") : "",
             })),
             foto,
           }),
@@ -364,57 +371,45 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
                   u={u}
                   keterangan={`Kondisi keluar: ${u.kondisiKeluar ? (u.kondisiKeluar === "baik" ? "Baik" : "Rusak") : "—"}`}
                 />
-                <fieldset className="mt-3">
-                  <legend className="mb-1.5 text-sm font-semibold text-gray-900">Kondisi Saat Dicek</legend>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {PILIHAN_MASUK.map(({ k, label }) => (
-                      <RadioChip
-                        key={k}
-                        name={`masuk-${u.detailId}`}
-                        value={k}
-                        checked={kondisi[u.detailId] === k}
-                        onChange={() => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
-                        disabled={s.pending}
-                        className={k === "hilang" ? "sm:col-span-2" : undefined}
-                      >
-                        {label}
-                      </RadioChip>
-                    ))}
-                  </div>
-                </fieldset>
                 <div className="mt-3">
-                  <Label htmlFor={`catatan-${u.detailId}`}>
-                    Catatan
-                    {wajib ? (
-                      <span className="text-red-700"> *</span>
-                    ) : (
-                      <span className="font-normal text-gray-500"> (opsional)</span>
-                    )}
-                  </Label>
-                  <Textarea
-                    id={`catatan-${u.detailId}`}
-                    rows={3}
-                    placeholder={wajib ? "Jelaskan kerusakan / kronologi hilang" : "Catatan kondisi barang"}
-                    value={catatan[u.detailId] ?? ""}
-                    onChange={(e) => setCatatan((prev) => ({ ...prev, [u.detailId]: e.target.value }))}
+                  <Segmented
+                    name={`masuk-${u.detailId}`}
+                    legend="Kondisi Saat Dicek"
+                    value={kondisi[u.detailId]}
+                    onChange={(k) => setKondisi((prev) => ({ ...prev, [u.detailId]: k }))}
+                    options={PILIHAN_MASUK}
                     disabled={s.pending}
-                    maxLength={BATAS.catatan}
-                    invalid={kosong}
-                    aria-label={`Catatan ${u.kodeAset}`}
                   />
                 </div>
+                {wajib && (
+                  <Field
+                    id={`keterangan-${u.detailId}`}
+                    label="Keterangan"
+                    className="mt-3"
+                    error={kosong ? "Keterangan wajib diisi untuk barang rusak/hilang." : undefined}
+                  >
+                    <Textarea
+                      id={`keterangan-${u.detailId}`}
+                      rows={3}
+                      placeholder="Contoh: barang rusak/hilang"
+                      value={catatan[u.detailId] ?? ""}
+                      onChange={(e) => setCatatan((prev) => ({ ...prev, [u.detailId]: e.target.value }))}
+                      disabled={s.pending}
+                      maxLength={BATAS.catatan}
+                      invalid={kosong}
+                      aria-label={`Keterangan ${u.kodeAset}`}
+                    />
+                  </Field>
+                )}
               </Card>
             </li>
           );
         })}
       </ul>
 
-      <Card>
-        <CardTitle className="mb-3">
-          Foto Bukti Pengembalian Barang<span className="text-red-700">*</span>
-        </CardTitle>
+      <FotoBukti judul="Foto Bukti Pengembalian Barang*">
         <PhotoPicker photos={photos} onChange={setPhotos} disabled={s.pending} />
-      </Card>
+      </FotoBukti>
 
       {s.error && (
         <Alert tone="danger" onDismiss={() => s.setError(null)}>
@@ -422,7 +417,7 @@ export function PengembalianForm({ peminjamanId, units }: { peminjamanId: number
         </Alert>
       )}
       <TombolSimpan tahap={s.tahap} pending={s.pending}>
-        Simpan Pengembalian
+        Konfirmasi Pengembalian
       </TombolSimpan>
     </form>
   );

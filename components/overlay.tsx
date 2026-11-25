@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useSyncExternalStore, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { LuTrash2, LuTriangleAlert, LuX } from "react-icons/lu";
+import { LuBan, LuTrash2, LuTriangleAlert, LuX } from "react-icons/lu";
 import { Button, cn, type ButtonVariant } from "@/components/ui";
 
 const FOCUSABLE =
@@ -169,7 +169,7 @@ export function ConfirmDialog({
   confirmLabel?: string;
   cancelLabel?: string;
   variant?: Extract<ButtonVariant, "danger" | "primary">;
-  icon?: "trash" | "warning" | "none";
+  icon?: "trash" | "warning" | "ban" | "none";
   pending?: boolean;
   onConfirm: () => void;
   onClose: () => void;
@@ -180,7 +180,7 @@ export function ConfirmDialog({
   const titleId = useId();
   const descId = useId();
   if (!mounted || !open) return null;
-  const Icon = icon === "trash" ? LuTrash2 : LuTriangleAlert;
+  const Icon = icon === "trash" ? LuTrash2 : icon === "ban" ? LuBan : LuTriangleAlert;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center">
