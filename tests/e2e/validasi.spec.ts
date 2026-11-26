@@ -138,11 +138,11 @@ test("Kategori: kode prefix hanya huruf kapital; Akun: aturan password", async (
   await page.getByRole("button", { name: "Tambah Akun" }).click();
   await page.locator("#nama").fill("Petugas Uji");
   await page.locator("#email").fill("uji.validasi@example.test");
-  await page.locator("#password").fill("passwordsaja");
-  await page.locator("#password_konfirmasi").fill("passwordsaja");
+  await page.locator("#password").fill("12345678");
+  await page.locator("#password_konfirmasi").fill("12345678");
   await page.locator("#role_id").selectOption({ label: "Sarana dan Prasarana" });
   await page.getByRole("button", { name: "Simpan" }).click();
-  await expect(page.getByText("Password harus mengandung angka.")).toBeVisible();
+  await expect(page.getByText("Password harus mengandung huruf.")).toBeVisible();
   await page.getByRole("button", { name: "Batal" }).click();
   const { count } = await db.from("staff_it").select("*", { count: "exact", head: true }).eq("email", "uji.validasi@example.test");
   expect(count).toBe(0);

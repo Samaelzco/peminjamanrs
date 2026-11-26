@@ -96,8 +96,7 @@ export const password = z
   .string()
   .min(BATAS.passwordMin, `Password minimal ${BATAS.passwordMin} karakter.`)
   .max(BATAS.passwordMax, `Password maksimal ${BATAS.passwordMax} karakter.`)
-  .regex(/[A-Za-z]/, "Password harus mengandung huruf.")
-  .regex(/\d/, "Password harus mengandung angka.");
+  .regex(/[A-Za-z]/, "Password harus mengandung huruf.");
 
 /** Segmen 2–5 huruf kapital dipisah tanda hubung, maks 3 segmen (mis. LPT, TI-LPT). */
 export const kodePrefix = z
